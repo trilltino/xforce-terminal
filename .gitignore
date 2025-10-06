@@ -1,0 +1,41 @@
+# Rust build artifacts
+/target
+**/target
+Cargo.lock
+
+# Environment variables (SENSITIVE!)
+.env
+.env.*
+!.env.example
+
+# Database files (SENSITIVE!)
+*.db
+*.db-shm
+*.db-wal
+/data/*.db
+/data/*.db-*
+
+# Data directory contents (keep structure only)
+/data/*
+!/data/.gitkeep
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+
+# OS
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Claude Code
+.claude/
