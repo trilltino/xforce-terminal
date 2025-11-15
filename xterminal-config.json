@@ -1,0 +1,67 @@
+{
+  "background": [
+    0,
+    0,
+    0
+  ],
+  "text": [
+    255,
+    255,
+    255
+  ],
+  "red_primary": [
+    204,
+    0,
+    0
+  ],
+  "red_dark": [
+    226,
+    165,
+    165
+  ],
+  "red_highlight": [
+    204,
+    0,
+    0
+  ],
+  "border_dark": [
+    51,
+    51,
+    51
+  ],
+  "border_red_tint": [
+    68,
+    0,
+    0
+  ],
+  "green_success": [
+    0,
+    255,
+    0
+  ],
+  "red_error": [
+    255,
+    0,
+    0
+  ],
+  "yellow_warning": [
+    255,
+    170,
+    0
+  ],
+  "blue_info": [
+    100,
+    150,
+    255
+  ],
+  "gray_inactive": [
+    26,
+    26,
+    26
+  ],
+  "gray_secondary": [
+    150,
+    150,
+    150
+  ]
+}

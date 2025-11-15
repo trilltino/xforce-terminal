@@ -3,30 +3,80 @@ name = "terminal"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "terminal"
+path = "src/lib.rs"
+
+[[bin]]
+name = "terminal"
+path = "src/main.rs"
+
 [dependencies]
 # Shared types
 shared = { path = "../shared" }
 
-# GTK4 UI
-gtk = { version = "0.9", package = "gtk4", features = ["v4_10"] }
-cairo-rs = "0.20"
-gdk4 = "0.9"
+# egui GUI Framework - Native desktop GUI
+eframe = "0.33.0"                                     # Native window framework for egui
+egui = "0.33.0"                                       # Immediate-mode GUI
+egui_plot = "0.34.0"                                  # Charts for egui
+
+# egui GUI Framework extensions
+egui_extras = "0.33.0"                                # Enhanced widgets, tables, and utilities
+egui_dock = "0.18.0"                                  # Dockable panels
+egui-notify = "0.21.0"                                # Toast notifications
+rfd = "0.15.4"                                        # Native file dialogs
+egui_material_icons = "0.5.0"                         # Material Design icons
 
 # HTTP client
-reqwest = { version = "0.12", features = ["json"] }
-tokio = { version = "1", features = ["full"] }
+reqwest = { workspace = true }                        # 0.12.24 from workspace
+tokio = { workspace = true, features = ["full"] }     # 1.48.0 from workspace, full features for TUI event loop
+tokio-tungstenite = { version = "0.24.0", default-features = false, features = ["rustls-tls-native-roots", "connect"] }  # WebSocket client (rustls, no OpenSSL needed)
+futures-util = "0.3.30"                              # Stream utilities
 
 # Serialization
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde = { workspace = true }
+serde_json = { workspace = true }
+bincode = "1.3.3"                                     # Binary serialization (2.0.1 available but has breaking changes, keeping 1.3.3 for Solana compatibility)
+base64 = "0.22.1"                                     # Base64 encoding/decoding
 
 # Random (for demo data)
-rand = "0.8"
+rand = "0.9"
 
-# Async runtime
-glib = "0.20"
-once_cell = "1.19"
-async-channel = "2.3"
+# Async runtime helpers
+once_cell = "1.21.3"
+async-channel = "2.5.0"
+futures = "0.3.31"                                    # For async/await in event loop
+parking_lot = "0.12.5"                                # Fast synchronous RwLock for state management
+async-trait = "0.1.83"                                # Async trait support for service traits
+
+# Time formatting
+chrono = { workspace = true }                         # 0.4.42 from workspace
+
+# Open URLs in browser
+open = "5.3.2"
+
+
+# Solana dependencies - needed for transaction signing (match backend version)
+solana-sdk = "3.0.0"
+solana-client = "3.0.10"
+spl-associated-token-account = "8.0.0"                # Latest from crates.io
+bs58 = { workspace = true }                           # Use workspace version (for base58 encoding)
+
+# Error handling
+thiserror = "2.0.17"                                  # Error handling (consistent with backend)
+
+# Debugging and tracing
+tracing = "0.1.41"                                    # Structured logging framework
+tracing-subscriber = { version = "0.3.20", features = ["env-filter", "json", "std", "fmt"] }
+tracing-appender = "0.2.3"                            # File appender with rotation
+sysinfo = "0.37.2"                                    # System metrics (memory, CPU) - latest from crates.io
+uuid = { version = "1.18.1", features = ["v4"] }      # UUID generation for trace IDs
+
+
+[features]
+default = []
+debug-mode = []                                       # Enable debug UI overlay
+profile = ["debug-mode"]                              # Enable profiling + debug
 
 [profile.release]
 opt-level = 3

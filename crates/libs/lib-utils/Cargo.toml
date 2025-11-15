@@ -1,0 +1,12 @@
+[package]
+name = "lib-utils"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Time
+chrono = { workspace = true }
+
+# Base64 encoding
+base64 = "0.22.1"
+

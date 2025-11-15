@@ -1,0 +1,877 @@
+{
+  "address": "HS63bw1V1qTM5uWf92q3uaFdqogrc4SN9qUJSR8aqBMx",
+  "metadata": {
+    "name": "batch_swap_router",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Batch swap router for XForce Terminal"
+  },
+  "docs": [
+    "Main program module",
+    "",
+    "This module contains the program entry point and instruction handlers.",
+    "All instructions are delegated to their respective handler modules for",
+    "better organization and maintainability."
+  ],
+  "instructions": [
+    {
+      "name": "batch_swap",
+      "docs": [
+        "Execute multiple token swaps in a single transaction",
+        "",
+        "This instruction allows users to execute multiple swaps atomically in a",
+        "single transaction, reducing fees and improving user experience.",
+        "",
+        "# Process Flow",
+        "",
+        "1. Validate the batch size (not empty, not too large)",
+        "2. Validate each swap parameter",
+        "3. Calculate fees for all swaps",
+        "4. Validate swap parameters",
+        "5. Emit event for tracking",
+        "",
+        "# Arguments",
+        "",
+        "* `ctx` - Context containing account information",
+        "* `swaps` - Vector of swap parameters (max 10 swaps per batch)",
+        "",
+        "# Accounts",
+        "",
+        "* `authority` - The signer executing the batch swap (must sign)",
+        "* `fee_recipient` - Optional fee recipient account",
+        "* `token_program` - SPL Token program",
+        "* `system_program` - System program for account management",
+        "",
+        "# Validation",
+        "",
+        "- Batch must not be empty",
+        "- Batch size must not exceed MAX_BATCH_SIZE (10)",
+        "- Each swap amount must be >= MIN_SWAP_AMOUNT (1)",
+        "- Input and output mints must differ for each swap",
+        "- Minimum output amount must be > 0 for each swap",
+        "",
+        "# Errors",
+        "",
+        "* `ErrorCode::EmptySwaps` - No swaps provided",
+        "* `ErrorCode::TooManySwaps` - More than MAX_BATCH_SIZE swaps provided",
+        "* `ErrorCode::InvalidAmount` - Invalid swap amount (zero or below minimum)",
+        "* `ErrorCode::InvalidSwapPair` - Input and output mints are the same",
+        "* `ErrorCode::InvalidMinOutput` - Invalid minimum output amount",
+        "",
+        "# Events",
+        "",
+        "Emits `BatchSwapEvent` on successful execution with:",
+        "- Authority public key",
+        "- Number of swaps executed",
+        "- Total input amount",
+        "- Total protocol fees",
+        "- Timestamp of execution",
+        "",
+        "# Example",
+        "",
+        "```rust,ignore",
+        "// Execute a batch of 3 swaps",
+        "batch_swap(ctx, vec![",
+        "SwapParams {",
+        "input_mint: sol_mint,",
+        "output_mint: usdc_mint,",
+        "amount: 1_000_000_000, // 1 SOL",
+        "min_output_amount: 90_000_000, // 90 USDC (10% slippage)",
+        "},",
+        "SwapParams {",
+        "input_mint: usdc_mint,",
+        "output_mint: btc_mint,",
+        "amount: 50_000_000, // 50 USDC",
+        "min_output_amount: 0_001_000_000, // 0.001 BTC",
+        "},",
+        "])?;",
+        "```",
+        "",
+        "# Implementation Notes",
+        "",
+        "- For client-side execution: Client gets quotes from Jupiter API, constructs",
+        "transaction with Jupiter swap instructions, and includes this instruction",
+        "for validation and tracking",
+        "- For program-side execution (future): Program would call Jupiter program via",
+        "CPI for each swap and validate slippage after execution"
+      ],
+      "discriminator": [
+        51,
+        209,
+        55,
+        199,
+        70,
+        151,
+        93,
+        172
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "The authority (signer) executing the batch swap",
+            "",
+            "This account must:",
+            "- Sign the transaction",
+            "- Have sufficient SOL to pay transaction fees",
+            "- Own all input token accounts for the swaps",
+            "",
+            "The authority is the user who wants to execute the batch swap."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "fee_recipient",
+          "docs": [
+            "Fee recipient account",
+            "",
+            "This account receives protocol fees from swaps."
+          ],
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "docs": [
+            "SPL Token program",
+            "",
+            "Required for token operations during swaps."
+          ],
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "System program for account management",
+            "",
+            "Required for any account operations. This is the standard Solana",
+            "system program that handles account creation, transfers, etc."
+          ],
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "swaps",
+          "type": {
+            "vec": {
+              "defined": {
+                "name": "SwapParams"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "execute_swap",
+      "docs": [
+        "Execute a single token swap",
+        "",
+        "This instruction performs an actual token swap with slippage protection,",
+        "fee calculation, and DEX integration support. It executes swaps between",
+        "different token mints with validation and fee distribution.",
+        "",
+        "# Process Flow",
+        "",
+        "1. Validate the swap amount and parameters",
+        "2. Validate account mints differ (actual swap)",
+        "3. Verify authority owns the input account",
+        "4. Validate fee recipient (if provided)",
+        "5. Calculate protocol fees",
+        "6. Execute swap (client-side via Jupiter or program-side)",
+        "7. Validate slippage tolerance",
+        "8. Distribute fees (if fee recipient provided)",
+        "9. Emit event for tracking",
+        "",
+        "# Arguments",
+        "",
+        "* `ctx` - Context containing token accounts, mints, and authority",
+        "* `amount` - Amount of input tokens to swap (in token's smallest unit)",
+        "* `min_output_amount` - Minimum output amount (slippage protection)",
+        "* `expected_output` - Expected output amount (from Jupiter quote, client-provided)",
+        "",
+        "# Accounts",
+        "",
+        "* `authority` - The signer executing the swap (must sign, must own input account)",
+        "* `input_token_account` - Input token account (tokens swapped from)",
+        "* `output_token_account` - Output token account (tokens received)",
+        "* `input_mint` - Input token mint",
+        "* `output_mint` - Output token mint",
+        "* `fee_recipient` - Optional fee recipient account",
+        "* `token_program` - SPL Token program",
+        "* `system_program` - System program",
+        "",
+        "# Validation",
+        "",
+        "- Amount must be >= MIN_SWAP_AMOUNT (1)",
+        "- Input and output accounts must have different mints",
+        "- Authority must be the owner of the input token account",
+        "- Slippage must be within tolerance (MAX_SLIPPAGE_BPS)",
+        "- Output must meet minimum requirement",
+        "",
+        "# Errors",
+        "",
+        "* `ErrorCode::InvalidAmount` - Amount is zero or below minimum",
+        "* `ErrorCode::InvalidSwapPair` - Input and output mints are the same",
+        "* `ErrorCode::InvalidAuthority` - Authority doesn't own input account",
+        "* `ErrorCode::SlippageExceeded` - Actual output < min_output_amount",
+        "* `ErrorCode::SwapExecutionFailed` - Swap execution failed",
+        "* `ErrorCode::InvalidFeeRecipient` - Invalid fee recipient account",
+        "",
+        "# Events",
+        "",
+        "Emits `SwapExecutedEvent` on successful execution with:",
+        "- Authority public key",
+        "- Input and output amounts",
+        "- Input and output mints",
+        "- Protocol fee",
+        "- Slippage in basis points",
+        "- Timestamp of execution",
+        "",
+        "# Example",
+        "",
+        "```rust,ignore",
+        "// Swap 1000 tokens from mint A to mint B",
+        "// Expected output: 950 tokens (from Jupiter quote)",
+        "// Minimum output: 900 tokens (5% slippage tolerance)",
+        "execute_swap(ctx, 1000, 900, 950)?;",
+        "```",
+        "",
+        "# Security Notes",
+        "",
+        "- Authority must sign the transaction",
+        "- Authority must own the input token account",
+        "- Slippage protection prevents unfavorable swaps",
+        "- Fees are calculated and distributed transparently",
+        "- Swap execution integrates with Jupiter/DEX aggregators",
+        "",
+        "# Implementation Notes",
+        "",
+        "- For client-side execution: Client includes Jupiter swap instructions in the",
+        "same transaction, and this instruction validates the results",
+        "- For program-side execution (future): Program would call Jupiter program via",
+        "CPI to execute the swap"
+      ],
+      "discriminator": [
+        56,
+        182,
+        124,
+        215,
+        155,
+        140,
+        157,
+        102
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "The authority (signer) executing the swap",
+            "",
+            "This account must:",
+            "- Sign the transaction",
+            "- Own the input token account",
+            "- Have sufficient SOL to pay transaction fees"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "input_token_account",
+          "docs": [
+            "Input token account (source - tokens swapped from)",
+            "",
+            "This account:",
+            "- Must be a valid SPL token account",
+            "- Must be owned by the authority",
+            "- Must contain sufficient tokens for the swap"
+          ],
+          "writable": true
+        },
+        {
+          "name": "output_token_account",
+          "docs": [
+            "Output token account (destination - tokens received)",
+            "",
+            "This account:",
+            "- Must be a valid SPL token account",
+            "- Must have a different mint than input account",
+            "- Will receive the swapped tokens"
+          ],
+          "writable": true
+        },
+        {
+          "name": "input_mint",
+          "docs": [
+            "Input token mint",
+            "",
+            "Mint of the input token being swapped.",
+            "Used for validation and routing."
+          ]
+        },
+        {
+          "name": "output_mint",
+          "docs": [
+            "Output token mint",
+            "",
+            "Mint of the output token being received.",
+            "Must differ from input_mint."
+          ]
+        },
+        {
+          "name": "fee_recipient",
+          "docs": [
+            "Fee recipient account",
+            "",
+            "Receives protocol fees from the swap."
+          ],
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "docs": [
+            "SPL Token program",
+            "",
+            "Required for token operations during the swap."
+          ],
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "System program",
+            "",
+            "Required for account operations."
+          ],
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "min_output_amount",
+          "type": "u64"
+        },
+        {
+          "name": "expected_output",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "BatchSwapEvent",
+      "discriminator": [
+        36,
+        59,
+        5,
+        195,
+        253,
+        228,
+        170,
+        11
+      ]
+    },
+    {
+      "name": "SwapExecutedEvent",
+      "discriminator": [
+        183,
+        28,
+        219,
+        210,
+        164,
+        184,
+        62,
+        12
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "EmptySwaps",
+      "msg": "Empty swaps array"
+    },
+    {
+      "code": 6001,
+      "name": "TooManySwaps",
+      "msg": "Too many swaps (max 10 per batch)"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidAmount",
+      "msg": "Invalid swap amount (must be > 0)"
+    },
+    {
+      "code": 6003,
+      "name": "SwapFailed",
+      "msg": "Swap failed"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidSwapPair",
+      "msg": "Invalid swap pair (input and output mints must differ)"
+    },
+    {
+      "code": 6005,
+      "name": "InvalidMinOutput",
+      "msg": "Invalid minimum output amount"
+    },
+    {
+      "code": 6006,
+      "name": "InvalidAccount",
+      "msg": "Invalid account"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidAccountMismatch",
+      "msg": "Account mint mismatch"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidAuthority",
+      "msg": "Invalid authority (must be token account owner)"
+    },
+    {
+      "code": 6009,
+      "name": "TransferFailed",
+      "msg": "Token transfer failed"
+    },
+    {
+      "code": 6010,
+      "name": "SlippageExceeded",
+      "msg": "Slippage tolerance exceeded"
+    },
+    {
+      "code": 6011,
+      "name": "InsufficientOutput",
+      "msg": "Insufficient output amount"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidFeeRecipient",
+      "msg": "Invalid fee recipient"
+    },
+    {
+      "code": 6013,
+      "name": "SwapExecutionFailed",
+      "msg": "Swap execution failed"
+    },
+    {
+      "code": 6014,
+      "name": "PriceImpactTooHigh",
+      "msg": "Price impact too high"
+    },
+    {
+      "code": 6015,
+      "name": "MathOverflow",
+      "msg": "Math overflow or underflow"
+    },
+    {
+      "code": 6016,
+      "name": "InsufficientFunds",
+      "msg": "Insufficient funds"
+    }
+  ],
+  "types": [
+    {
+      "name": "BatchSwapEvent",
+      "docs": [
+        "Event emitted when a batch swap is executed",
+        "",
+        "This event is emitted after a successful batch swap execution. It contains",
+        "information about the batch swap that can be used for tracking, indexing,",
+        "and analytics.",
+        "",
+        "# Event Data",
+        "",
+        "* `authority` - The public key of the authority who executed the batch swap",
+        "* `swap_count` - The number of swaps executed in this batch",
+        "* `timestamp` - The Unix timestamp when the batch swap was executed",
+        "",
+        "# Usage",
+        "",
+        "This event can be used to:",
+        "- Track batch swap executions",
+        "- Analyze swap patterns",
+        "- Calculate statistics (average batch size, etc.)",
+        "- Monitor program usage",
+        "",
+        "# Indexing",
+        "",
+        "Events can be indexed by:",
+        "- Block explorers",
+        "- Indexing services",
+        "- Custom indexers",
+        "",
+        "# Example",
+        "",
+        "```rust,ignore",
+        "// Event is automatically emitted after successful batch swap",
+        "emit!(BatchSwapEvent {",
+        "authority: authority.key(),",
+        "swap_count: swaps.len() as u8,",
+        "timestamp: clock.unix_timestamp,",
+        "});",
+        "```",
+        "",
+        "# Event Data Details",
+        "",
+        "## authority",
+        "",
+        "The public key of the account that executed the batch swap. This is useful",
+        "for tracking which users are using the batch swap functionality.",
+        "",
+        "## swap_count",
+        "",
+        "The number of swaps executed in this batch. This is useful for:",
+        "- Analyzing batch sizes",
+        "- Understanding usage patterns",
+        "- Calculating average batch sizes",
+        "",
+        "## timestamp",
+        "",
+        "The Unix timestamp when the batch swap was executed. This is useful for:",
+        "- Time-based analysis",
+        "- Tracking execution times",
+        "- Monitoring program activity over time",
+        ""
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "The public key of the authority who executed the batch swap"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "swap_count",
+            "docs": [
+              "The number of swaps executed in this batch"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "total_input_amount",
+            "docs": [
+              "Total input amount across all swaps"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "total_protocol_fees",
+            "docs": [
+              "Total protocol fees collected"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "docs": [
+              "The Unix timestamp when the batch swap was executed"
+            ],
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SwapExecutedEvent",
+      "docs": [
+        "Event emitted when a single swap is executed",
+        "",
+        "This event is emitted after a successful single swap execution. It contains",
+        "information about the swap that can be used for tracking, indexing, and analytics.",
+        "",
+        "# Event Data",
+        "",
+        "* `authority` - The public key of the authority who executed the swap",
+        "* `amount` - The amount of tokens transferred",
+        "* `from` - The public key of the source token account",
+        "* `to` - The public key of the destination token account",
+        "* `timestamp` - The Unix timestamp when the swap was executed",
+        "",
+        "# Usage",
+        "",
+        "This event can be used to:",
+        "- Track swap executions",
+        "- Analyze swap patterns",
+        "- Calculate statistics (total volume, etc.)",
+        "- Monitor program usage",
+        "",
+        "# Indexing",
+        "",
+        "Events can be indexed by:",
+        "- Block explorers",
+        "- Indexing services",
+        "- Custom indexers",
+        "",
+        "# Example",
+        "",
+        "```rust,ignore",
+        "// Event is automatically emitted after successful swap",
+        "emit!(SwapExecutedEvent {",
+        "authority: authority.key(),",
+        "amount: amount,",
+        "from: from.key(),",
+        "to: to.key(),",
+        "timestamp: clock.unix_timestamp,",
+        "});",
+        "```",
+        "",
+        "# Event Data Details",
+        "",
+        "## authority",
+        "",
+        "The public key of the account that executed the swap. This is useful",
+        "for tracking which users are using the swap functionality.",
+        "",
+        "## amount",
+        "",
+        "The amount of tokens transferred in this swap. This is expressed in",
+        "the token's smallest unit (e.g., lamports for SOL).",
+        "",
+        "## from",
+        "",
+        "The public key of the source token account. This is the account that",
+        "tokens were transferred from.",
+        "",
+        "## to",
+        "",
+        "The public key of the destination token account. This is the account",
+        "that tokens were transferred to.",
+        "",
+        "## timestamp",
+        "",
+        "The Unix timestamp when the swap was executed. This is useful for",
+        "time-based analysis and tracking.",
+        ""
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "The public key of the authority who executed the swap"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "input_amount",
+            "docs": [
+              "Input token amount"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "output_amount",
+            "docs": [
+              "Output token amount received"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "input_mint",
+            "docs": [
+              "Input token mint"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "output_mint",
+            "docs": [
+              "Output token mint"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "protocol_fee",
+            "docs": [
+              "Protocol fee charged"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "slippage_bps",
+            "docs": [
+              "Slippage in basis points"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "docs": [
+              "The Unix timestamp when the swap was executed"
+            ],
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SwapParams",
+      "docs": [
+        "Parameters for a single swap operation",
+        "",
+        "This structure contains all parameters needed to execute a single swap",
+        "within a batch. Each swap in a batch will have its own `SwapParams`.",
+        "",
+        "# Fields",
+        "",
+        "* `input_mint` - The mint (token type) of the input token",
+        "- This identifies what token is being swapped from",
+        "- Must be a valid token mint address",
+        "- Must differ from `output_mint` (validated in instruction)",
+        "",
+        "* `output_mint` - The mint (token type) of the output token",
+        "- This identifies what token is being swapped to",
+        "- Must be a valid token mint address",
+        "- Must differ from `input_mint` (validated in instruction)",
+        "",
+        "* `amount` - Amount of input tokens to swap",
+        "- Expressed in the token's smallest unit (e.g., lamports for SOL)",
+        "- Must be >= MIN_SWAP_AMOUNT (1) (validated in instruction)",
+        "- Should be economically meaningful (not dust)",
+        "",
+        "* `min_output_amount` - Minimum output amount (slippage protection)",
+        "- Expressed in the output token's smallest unit",
+        "- The swap will fail if the output is less than this amount",
+        "- Must be > 0 (validated in instruction)",
+        "- Should account for slippage (e.g., 5% slippage tolerance)",
+        "",
+        "# Example",
+        "",
+        "```rust,ignore",
+        "SwapParams {",
+        "input_mint: sol_mint,        // SOL mint address",
+        "output_mint: usdc_mint,      // USDC mint address",
+        "amount: 1_000_000_000,       // 1 SOL (in lamports)",
+        "min_output_amount: 90_000_000, // 90 USDC (10% slippage tolerance)",
+        "}",
+        "```",
+        "",
+        "# Validation",
+        "",
+        "The following validations are performed:",
+        "- `amount` >= MIN_SWAP_AMOUNT",
+        "- `min_output_amount` > 0",
+        "- `input_mint` != `output_mint`",
+        "",
+        "# Security Considerations",
+        "",
+        "- `min_output_amount` provides slippage protection",
+        "- `amount` must be validated to prevent attacks",
+        "- Mints must be validated to prevent invalid swaps",
+        "",
+        "# Future Enhancements",
+        "",
+        "- Could add deadline for swap execution",
+        "- Could add route information (which DEX to use)",
+        "- Could add fee preferences",
+        "- Could add price oracle information"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "input_mint",
+            "docs": [
+              "Input token mint (source token)",
+              "",
+              "This is the mint address of the token being swapped from.",
+              "Must be a valid token mint address on Solana.",
+              "",
+              "# Example",
+              "",
+              "- SOL: `So11111111111111111111111111111111111111112`",
+              "- USDC: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`",
+              "- Custom token: Any valid SPL token mint address"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "output_mint",
+            "docs": [
+              "Output token mint (destination token)",
+              "",
+              "This is the mint address of the token being swapped to.",
+              "Must be a valid token mint address on Solana.",
+              "Must differ from `input_mint`.",
+              "",
+              "# Example",
+              "",
+              "- SOL: `So11111111111111111111111111111111111111112`",
+              "- USDC: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`",
+              "- Custom token: Any valid SPL token mint address"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "docs": [
+              "Amount of input tokens to swap",
+              "",
+              "This is the amount of input tokens to swap, expressed in the token's",
+              "smallest unit (e.g., lamports for SOL, or the token's decimal base).",
+              "",
+              "# Example",
+              "",
+              "- 1 SOL = 1_000_000_000 lamports",
+              "- 1 USDC = 1_000_000 (6 decimals)",
+              "- 1 Custom token = depends on token decimals",
+              "",
+              "# Constraints",
+              "",
+              "- Must be >= MIN_SWAP_AMOUNT (1)",
+              "- Should be economically meaningful (not dust)",
+              "- Must not exceed account balance"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "min_output_amount",
+            "docs": [
+              "Minimum output amount (for slippage protection)",
+              "",
+              "This is the minimum amount of output tokens that must be received",
+              "for the swap to succeed. If the actual output is less than this amount,",
+              "the swap will fail.",
+              "",
+              "This provides slippage protection, ensuring users don't receive less",
+              "than expected due to price movements or liquidity issues.",
+              "",
+              "# Example",
+              "",
+              "If swapping 1 SOL for USDC:",
+              "- Expected output: 100 USDC",
+              "- Slippage tolerance: 5%",
+              "- `min_output_amount`: 95 USDC (95% of expected)",
+              "",
+              "# Constraints",
+              "",
+              "- Must be > 0",
+              "- Should account for expected slippage",
+              "- Should be expressed in output token's smallest unit",
+              "",
+              "# Security",
+              "",
+              "- Prevents receiving less than expected",
+              "- Protects against price manipulation",
+              "- Protects against liquidity issues"
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    }
+  ]
+}

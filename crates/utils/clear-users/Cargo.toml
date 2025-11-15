@@ -1,0 +1,25 @@
+[package]
+name = "clear-users"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Core library (only what we need)
+lib-core = { path = "../../libs/lib-core" }
+
+# Async runtime
+tokio = { version = "1.48", features = ["rt", "macros", "rt-multi-thread"] }
+
+# Database (match lib-core features)
+sqlx = { version = "0.8.6", features = ["runtime-tokio", "sqlite", "chrono"] }
+
+# Error handling
+anyhow = "1.0.100"
+
+# Environment
+dotenvy = "0.15.7"
+
+[[bin]]
+name = "clear_users"
+path = "src/main.rs"
+

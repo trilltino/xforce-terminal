@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Wallet - XForce Terminal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000000;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Starfield Background */
+        .starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(ellipse at bottom, #1a0033 0%, #000000 100%);
+            overflow: hidden;
+        }
+
+        .stars {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #ffffff;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+        }
+
+        .stars:nth-child(odd) {
+            animation-duration: 2s;
+        }
+
+        .stars:nth-child(even) {
+            animation-duration: 4s;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            33% { transform: translateY(-10px) translateX(5px); }
+            66% { transform: translateY(5px) translateX(-5px); }
+        }
+
+        @keyframes floatHover {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-15px) scale(1.05); }
+        }
+
+        .floating {
+            animation: float 6s ease-in-out infinite;
+            transition: all 0.3s ease;
+        }
+
+        .floating:hover {
+            animation: floatHover 2s ease-in-out infinite;
+            filter: drop-shadow(0 10px 30px rgba(255, 0, 0, 0.4));
+        }
+
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .content-wrapper {
+            flex: 1;
+            display: flex;
+            min-height: calc(100vh - 60px);
+        }
+
+        .left-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 60px;
+            max-width: 600px;
+            border-right: 1px solid rgba(255, 0, 0, 0.1);
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, rgba(10, 0, 0, 0.9) 100%);
+            position: relative;
+            backdrop-filter: blur(5px);
+        }
+
+        .left-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(180deg, 
+                transparent 0%, 
+                rgba(255, 0, 0, 0.3) 20%,
+                rgba(255, 0, 0, 0.6) 50%,
+                rgba(255, 0, 0, 0.3) 80%,
+                transparent 100%);
+            opacity: 0.6;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+        }
+
+        .left-section::after {
+            content: '';
+            position: absolute;
+            top: 20%;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255, 0, 0, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(60px);
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .right-section {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            background: transparent;
+            position: relative;
+        }
+
+        .right-section::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 0, 0, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(80px);
+            transform: translate(-50%, -50%);
+            animation: float 10s ease-in-out infinite;
+            animation-delay: 2s;
+        }
+
+        @media (max-width: 968px) {
+            #connect-page.active {
+                flex-direction: column;
+            }
+
+            .left-section {
+                border-right: none;
+                border-bottom: 1px solid #333333;
+                max-width: 100%;
+                padding: 40px 20px;
+                text-align: center;
+            }
+
+            .right-section {
+                padding: 20px;
+            }
+
+            .main-header {
+                font-size: 42px;
+            }
+
+            .main-subheader {
+                font-size: 18px;
+            }
+
+            .signup-text {
+                font-size: 14px;
+            }
+        }
+
+        .main-header {
+            font-size: 56px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 20px;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #ffffff 0%, #ff6666 50%, #ff0000 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 60px rgba(255, 0, 0, 0.5),
+                         0 0 100px rgba(255, 0, 0, 0.3);
+            position: relative;
+            transition: all 0.4s ease;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .main-header:hover {
+            transform: translateY(-5px) scale(1.02);
+            filter: drop-shadow(0 10px 40px rgba(255, 0, 0, 0.6));
+            animation-play-state: paused;
+        }
+
+        .main-subheader {
+            font-size: 22px;
+            color: #cccccc;
+            font-weight: 400;
+            line-height: 1.5;
+            letter-spacing: -0.01em;
+            margin-bottom: 8px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            animation: float 7s ease-in-out infinite;
+            animation-delay: 0.5s;
+        }
+
+        .main-subheader:hover {
+            color: #ffffff;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .signup-text {
+            color: #ff3333;
+            font-size: 16px;
+            font-weight: 500;
+            margin-top: 24px;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+            transition: all 0.3s ease;
+            animation: float 8s ease-in-out infinite;
+            animation-delay: 1s;
+        }
+
+        .signup-text:hover {
+            color: #ff6666;
+            text-shadow: 0 0 30px rgba(255, 0, 0, 0.6);
+            transform: translateY(-3px) scale(1.05);
+        }
+
+        .container {
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .about-container {
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .card {
+            background: linear-gradient(135deg, rgba(10, 10, 10, 0.9) 0%, rgba(0, 0, 0, 0.95) 100%);
+            border: 1px solid rgba(255, 0, 0, 0.2);
+            border-radius: 20px;
+            padding: 40px 32px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), 
+                        0 0 0 1px rgba(255, 0, 0, 0.1),
+                        inset 0 0 60px rgba(255, 0, 0, 0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #ff0000, #ff3333, #ff0000, #cc0000);
+            border-radius: 20px;
+            opacity: 0;
+            z-index: -1;
+            transition: opacity 0.4s ease;
+            filter: blur(10px);
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: rgba(255, 0, 0, 0.6);
+            box-shadow: 0 20px 60px rgba(255, 0, 0, 0.3), 
+                        0 0 0 1px rgba(255, 0, 0, 0.5),
+                        inset 0 0 80px rgba(255, 0, 0, 0.1),
+                        0 0 100px rgba(255, 0, 0, 0.2);
+        }
+
+        .card:hover::before {
+            opacity: 0.3;
+        }
+
+        h1 {
+            color: #ffffff;
+            font-size: 32px;
+            margin-bottom: 12px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            color: #cccccc;
+            margin-bottom: 32px;
+            font-size: 15px;
+        }
+
+        .wallet-address {
+            background: linear-gradient(135deg, rgba(10, 10, 10, 0.8) 0%, rgba(0, 0, 0, 0.9) 100%);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            padding: 16px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            word-break: break-all;
+            color: #00ff88;
+            box-shadow: 0 2px 8px rgba(0, 255, 136, 0.2),
+                        0 0 20px rgba(0, 255, 136, 0.1),
+                        inset 0 0 20px rgba(0, 255, 136, 0.05);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            animation: float 9s ease-in-out infinite;
+        }
+
+        .wallet-address:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 255, 136, 0.6);
+            box-shadow: 0 4px 16px rgba(0, 255, 136, 0.4),
+                        0 0 40px rgba(0, 255, 136, 0.2),
+                        inset 0 0 30px rgba(0, 255, 136, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+            color: #ffffff;
+            border: none;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+            margin: 8px 0;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            box-shadow: 0 4px 16px rgba(255, 0, 0, 0.4),
+                        0 0 20px rgba(255, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #ff3333 0%, #ff0000 100%);
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: 0 12px 40px rgba(255, 0, 0, 0.6),
+                        0 0 40px rgba(255, 0, 0, 0.4),
+                        0 0 60px rgba(255, 0, 0, 0.2);
+            filter: brightness(1.2);
+        }
+
+        .btn:hover:not(:disabled)::before {
+            left: 100%;
+        }
+
+        .btn:hover:not(:disabled)::after {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .error {
+            background: linear-gradient(135deg, #1a0000 0%, #000000 100%);
+            border: 1px solid #ff0000;
+            color: #ff6666;
+            padding: 16px;
+            border-radius: 12px;
+            margin: 20px 0;
+            box-shadow: 0 4px 16px rgba(255, 0, 0, 0.2);
+        }
+
+        .success {
+            background: linear-gradient(135deg, #001a00 0%, #000000 100%);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-size: 18px;
+            font-weight: 600;
+            box-shadow: 0 4px 16px rgba(0, 255, 136, 0.2);
+        }
+
+        .info {
+            background: linear-gradient(135deg, rgba(10, 10, 10, 0.8) 0%, rgba(0, 0, 0, 0.9) 100%);
+            border: 1px solid rgba(255, 0, 0, 0.2);
+            padding: 16px;
+            border-radius: 12px;
+            margin: 20px 0;
+            color: #cccccc;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5),
+                        inset 0 0 20px rgba(255, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .info:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255, 0, 0, 0.4);
+            box-shadow: 0 4px 16px rgba(255, 0, 0, 0.2),
+                        inset 0 0 30px rgba(255, 0, 0, 0.1);
+        }
+
+        .spinner {
+            border: 3px solid rgba(26, 0, 0, 0.3);
+            border-top: 3px solid #ff0000;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite, float 3s ease-in-out infinite;
+            margin: 20px auto;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.5),
+                        0 0 60px rgba(255, 0, 0, 0.3);
+            filter: blur(0.5px);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        nav {
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(10, 0, 0, 0.95) 100%);
+            border-bottom: 1px solid rgba(255, 0, 0, 0.2);
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.8),
+                        0 0 20px rgba(255, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        nav::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 0, 0, 0.3) 25%,
+                rgba(255, 0, 0, 0.6) 50%,
+                rgba(255, 0, 0, 0.3) 75%,
+                transparent 100%);
+            opacity: 0.6;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+        }
+
+        .nav-link {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, rgba(26, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.8) 100%);
+            border-bottom: 2px solid #ff0000;
+            color: #ff3333;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .nav-link:hover {
+            background: rgba(26, 0, 0, 0.4);
+            color: #ff6666;
+            transform: translateY(-3px);
+            text-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
+            box-shadow: 0 4px 12px rgba(255, 0, 0, 0.2);
+        }
+
+        #about-page {
+            display: none;
+        }
+
+        #about-page.active {
+            display: block;
+        }
+
+        #connect-page {
+            display: none;
+        }
+
+        #connect-page.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+    <!-- Starfield Background -->
+    <div class="starfield" id="starfield"></div>
+    
+    <div class="page-container">
+        <nav>
+            <div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; justify-content: space-between; align-items: center;">
+                <a href="#" onclick="showPage('connect'); return false;" style="font-size: 20px; font-weight: 700; color: #ffffff; text-decoration: none; letter-spacing: -0.01em;">
+                    XForce Terminal
+                </a>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <a href="#" onclick="showPage('connect'); return false;" id="nav-home" class="nav-link" style="color: #ffffff; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 4px; transition: all 0.2s;" 
+                       onmouseover="if(!this.classList.contains('active')) { this.style.background='#1a0000'; this.style.color='#ff6666'; }" 
+                       onmouseout="if(!this.classList.contains('active')) { this.style.background='transparent'; this.style.color='#ffffff'; }">
+                        Home
+                    </a>
+                    <a href="#" onclick="showPage('about'); return false;" id="nav-about" class="nav-link" style="color: #ffffff; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 4px; transition: all 0.2s;"
+                       onmouseover="if(!this.classList.contains('active')) { this.style.background='#1a0000'; this.style.color='#ff6666'; }" 
+                       onmouseout="if(!this.classList.contains('active')) { this.style.background='transparent'; this.style.color='#ffffff'; }">
+                        About
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="content-wrapper">
+            <!-- Connect Page -->
+            <div id="connect-page" class="active">
+                <!-- Left Section: Header and Subheader -->
+                <div class="left-section">
+                    <h1 class="main-header">XForceTerminal</h1>
+                    <p class="main-subheader">Access to Solana Defi anywhere</p>
+                    <p class="signup-text">Connect wallet to complete sign up</p>
+                </div>
+
+                <!-- Right Section: Wallet Connection -->
+                <div class="right-section">
+                    <div class="container">
+                        <div class="card">
+                            <h1 style="font-size: 28px; margin-bottom: 12px;">Connect Wallet</h1>
+                            <p class="subtitle" id="username" style="color: #cccccc; margin-bottom: 32px;">XForce Terminal</p>
+
+                            <div id="error" class="error hidden"></div>
+                            <div id="success" class="success hidden"></div>
+                    <div id="loading" class="hidden">
+                        <div class="spinner"></div>
+                        <p>Connecting wallet...</p>
+                    </div>
+
+                    <div id="connect-section">
+                        <div class="info">
+                            Connect your wallet to link it with your terminal account
+                        </div>
+                        <div id="wallet-buttons" style="display: flex; flex-direction: column; gap: 12px;">
+                            <!-- Wallet buttons will be dynamically added here -->
+                        </div>
+                    </div>
+
+                    <div id="wallet-info" class="hidden">
+                        <div class="wallet-address" id="walletAddress"></div>
+                        <div class="info">
+                            You can now close this window and return to the terminal
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About Page -->
+            <div id="about-page" style="display: none; width: 100%; padding: 40px;">
+                <div class="about-container" style="margin: 0 auto;">
+                    <div class="card" style="text-align: left; padding: 48px;">
+                        <h1 style="text-align: center; margin-bottom: 32px; font-size: 32px;">About XForce Terminal</h1>
+                    
+                    <div style="color: #ffffff; line-height: 1.8; font-size: 16px;">
+                        <p style="margin-bottom: 24px;">
+                            XForce Terminal is a professional-grade DeFi trading terminal designed for the Solana ecosystem. 
+                            Built with performance and usability in mind, it provides traders with the tools they need to 
+                            execute trades efficiently and manage their portfolios.
+                        </p>
+                        
+                        <h2 style="color: #ffffff; font-size: 24px; margin-top: 32px; margin-bottom: 16px;">Features</h2>
+                        <ul style="margin-left: 24px; margin-bottom: 24px; color: #cccccc;">
+                            <li style="margin-bottom: 8px;">Real-time market data and price feeds</li>
+                            <li style="margin-bottom: 8px;">Secure wallet integration with Phantom, Solflare, Backpack, and more</li>
+                            <li style="margin-bottom: 8px;">Advanced trading capabilities</li>
+                            <li style="margin-bottom: 8px;">Portfolio management and tracking</li>
+                            <li style="margin-bottom: 8px;">Transaction signing and management</li>
+                        </ul>
+                        
+                        <h2 style="color: #ffffff; font-size: 24px; margin-top: 32px; margin-bottom: 16px;">Technology</h2>
+                        <p style="margin-bottom: 24px; color: #cccccc;">
+                            XForce Terminal is built using modern web technologies and the Rust programming language 
+                            for maximum performance and security. The terminal interface provides a Bloomberg-inspired 
+                            experience optimized for cryptocurrency trading.
+                        </p>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple client-side routing
+        function showPage(page) {
+            // Hide all pages
+            document.getElementById('connect-page').classList.remove('active');
+            document.getElementById('about-page').classList.remove('active');
+            
+            // Remove active class from all nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                link.style.background = 'transparent';
+                link.style.color = '#ffffff';
+            });
+            
+            // Show selected page
+            if (page === 'about') {
+                document.getElementById('about-page').classList.add('active');
+                document.getElementById('nav-about').classList.add('active');
+                document.getElementById('nav-about').style.background = 'linear-gradient(135deg, #1a0000 0%, #000000 100%)';
+                document.getElementById('nav-about').style.color = '#ff3333';
+                // Update URL without reload
+                window.history.pushState({page: 'about'}, '', '/about');
+            } else {
+                document.getElementById('connect-page').classList.add('active');
+                document.getElementById('nav-home').classList.add('active');
+                document.getElementById('nav-home').style.background = 'linear-gradient(135deg, #1a0000 0%, #000000 100%)';
+                document.getElementById('nav-home').style.color = '#ff3333';
+                // Update URL without reload
+                window.history.pushState({page: 'connect'}, '', '/');
+            }
+        }
+
+        // Handle browser back/forward buttons
+        window.addEventListener('popstate', function(event) {
+            const path = window.location.pathname;
+            if (path === '/about') {
+                showPage('about');
+            } else {
+                showPage('connect');
+            }
+        });
+
+        // Create starfield function
+        function createStarfield() {
+            const starfield = document.getElementById('starfield');
+            if (!starfield) return;
+            
+            const numStars = 150;
+            
+            for (let i = 0; i < numStars; i++) {
+                const star = document.createElement('div');
+                star.className = 'stars';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                star.style.width = (Math.random() * 2 + 1) + 'px';
+                star.style.height = star.style.width;
+                
+                // Create some larger, brighter stars
+                if (Math.random() > 0.8) {
+                    star.style.width = (Math.random() * 3 + 2) + 'px';
+                    star.style.height = star.style.width;
+                    star.style.boxShadow = '0 0 10px rgba(255, 255, 255, 1), 0 0 20px rgba(255, 0, 0, 0.5)';
+                    star.style.background = '#ff6666';
+                }
+                
+                // Create some red-tinted stars
+                if (Math.random() > 0.9) {
+                    star.style.background = '#ff3333';
+                    star.style.boxShadow = '0 0 8px rgba(255, 0, 0, 0.8), 0 0 16px rgba(255, 0, 0, 0.4)';
+                }
+                
+                starfield.appendChild(star);
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check initial route
+            const path = window.location.pathname;
+            if (path === '/about') {
+                showPage('about');
+            } else {
+                showPage('connect');
+            }
+            
+            // Create starfield
+            createStarfield();
+        });
+    </script>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:3001';
+
+        // Get token from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const setupToken = urlParams.get('token');
+
+        const errorDiv = document.getElementById('error');
+        const successDiv = document.getElementById('success');
+        const loadingDiv = document.getElementById('loading');
+        const connectSection = document.getElementById('connect-section');
+        const walletInfo = document.getElementById('wallet-info');
+        const walletAddress = document.getElementById('walletAddress');
+        const usernameEl = document.getElementById('username');
+        const walletButtons = document.getElementById('wallet-buttons');
+        
+        // Detect available wallets
+        function detectWallets() {
+            const wallets = [];
+            
+            // Check Phantom
+            if (window.solana && window.solana.isPhantom) {
+                wallets.push({ name: 'Phantom', provider: 'phantom', adapter: window.solana });
+            }
+            
+            // Check Solflare
+            if (window.solflare) {
+                wallets.push({ name: 'Solflare', provider: 'solflare', adapter: window.solflare });
+            } else if (window.solana && window.solana.isSolflare) {
+                wallets.push({ name: 'Solflare', provider: 'solflare', adapter: window.solana });
+            }
+            
+            // Check Backpack
+            if (window.backpack) {
+                wallets.push({ name: 'Backpack', provider: 'backpack', adapter: window.backpack });
+            } else if (window.solana && window.solana.isBackpack) {
+                wallets.push({ name: 'Backpack', provider: 'backpack', adapter: window.solana });
+            }
+            
+            return wallets;
+        }
+        
+        // Create wallet buttons
+        function createWalletButtons() {
+            const wallets = detectWallets();
+            
+            if (wallets.length === 0) {
+                walletButtons.innerHTML = `
+                    <div style="background: linear-gradient(135deg, #0a0a0a 0%, #000000 100%); border: 1px solid #1a1a1a; padding: 24px; border-radius: 12px; text-align: center; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
+                        <p style="color: #ffffff; margin-bottom: 16px; font-weight: 600; font-size: 18px;">No wallet extensions detected</p>
+                        <p style="color: #888888; font-size: 0.9em; margin-bottom: 16px;">Please install one of the following wallets:</p>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px;">
+                            <p style="color: #cccccc; font-size: 0.85em;">• <span style="color: #ff6666; font-weight: 500;">Phantom</span></p>
+                            <p style="color: #cccccc; font-size: 0.85em;">• <span style="color: #ff6666; font-weight: 500;">Solflare</span></p>
+                            <p style="color: #cccccc; font-size: 0.85em;">• <span style="color: #ff6666; font-weight: 500;">Backpack</span></p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            wallets.forEach(wallet => {
+                const button = document.createElement('button');
+                button.className = 'btn';
+                button.innerHTML = `<span style="font-weight: 600;">${wallet.name}</span><span style="font-size: 0.9em; opacity: 0.9;">→</span>`;
+                button.style.cssText = 'width: 100%; padding: 16px; font-size: 1em; background: linear-gradient(135deg, #1a0000 0%, #000000 100%); color: #ffffff; border: 1px solid #333333; border-radius: 12px; cursor: pointer; transition: all 0.3s; text-align: left; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);';
+                button.onmouseover = function() {
+                    this.style.background = 'linear-gradient(135deg, #ff0000 0%, #cc0000 100%)';
+                    this.style.borderColor = '#ff3333';
+                    this.style.boxShadow = '0 8px 32px rgba(255, 0, 0, 0.6), 0 0 40px rgba(255, 0, 0, 0.4)';
+                    this.style.transform = 'translateY(-10px) scale(1.05)';
+                    this.style.filter = 'brightness(1.2)';
+                };
+                button.onmouseout = function() {
+                    this.style.background = 'linear-gradient(135deg, #1a0000 0%, #000000 100%)';
+                    this.style.borderColor = '#333333';
+                    this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+                    this.style.transform = 'translateY(0) scale(1)';
+                    this.style.filter = 'brightness(1)';
+                };
+                button.onclick = () => connectWallet(wallet);
+                walletButtons.appendChild(button);
+            });
+        }
+        
+        // Initialize wallet buttons on page load
+        createWalletButtons();
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            loadingDiv.classList.add('hidden');
+        }
+
+        function showSuccess(message) {
+            successDiv.textContent = message;
+            successDiv.classList.remove('hidden');
+            loadingDiv.classList.add('hidden');
+            connectSection.classList.add('hidden');
+            walletInfo.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorDiv.classList.add('hidden');
+        }
+
+        async function connectWallet(wallet) {
+            hideError();
+
+            if (!setupToken) {
+                showError('Missing setup token. Please sign up in the terminal first.');
+                return;
+            }
+
+            // Disable all buttons
+            const buttons = walletButtons.querySelectorAll('button');
+            buttons.forEach(btn => btn.disabled = true);
+            loadingDiv.classList.remove('hidden');
+
+            try {
+                // Step 1: Validate token with backend
+                const validateResp = await fetch(`${BACKEND_URL}/api/wallet/setup/validate?token=${setupToken}`);
+                if (!validateResp.ok) {
+                    throw new Error('Invalid or expired setup token');
+                }
+
+                const validateData = await validateResp.json();
+                console.log('Token validated for user:', validateData.username);
+                usernameEl.textContent = `Welcome, ${validateData.username}!`;
+
+                // Step 2: Connect wallet
+                if (!wallet.adapter) {
+                    throw new Error(`${wallet.name} wallet not found. Please install the extension.`);
+                }
+
+                const resp = await wallet.adapter.connect();
+                const pubkey = resp.publicKey.toString();
+                console.log(`${wallet.name} wallet connected:`, pubkey);
+
+                // Step 3: Sign challenge message
+                const message = `Connect wallet to XForce Terminal\n\nChallenge: ${validateData.challenge}`;
+                const encodedMessage = new TextEncoder().encode(message);
+                const signedMessage = await wallet.adapter.signMessage(encodedMessage, 'utf8');
+                const signature = bs58.encode(signedMessage.signature);
+
+                // Step 4: Complete setup on backend
+                const completeResp = await fetch(`${BACKEND_URL}/api/wallet/setup/complete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        setup_token: setupToken,
+                        wallet_address: pubkey,
+                        signature: signature,
+                        challenge: validateData.challenge
+                    })
+                });
+
+                if (!completeResp.ok) {
+                    const errorText = await completeResp.text();
+                    throw new Error(`Setup failed: ${errorText}`);
+                }
+
+                const completeData = await completeResp.json();
+                console.log('Setup complete:', completeData);
+
+                // Show success
+                walletAddress.textContent = pubkey;
+                showSuccess('Wallet Connected Successfully');
+
+            } catch (error) {
+                console.error('Connection error:', error);
+                showError(error.message || 'Failed to connect wallet');
+                // Re-enable all buttons
+                const buttons = walletButtons.querySelectorAll('button');
+                buttons.forEach(btn => btn.disabled = false);
+            }
+            loadingDiv.classList.add('hidden');
+        }
+
+        // Load bs58 library
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/bs58@5.0.0/index.js';
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>

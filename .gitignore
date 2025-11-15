@@ -1,23 +1,42 @@
 # Rust build artifacts
 /target
 **/target
-Cargo.lock
+# Note: Cargo.lock should be committed for applications/workspaces with binaries
+# If you want to ignore it, uncomment the line below:
+# Cargo.lock
 
 # Environment variables (SENSITIVE!)
 .env
 .env.*
 !.env.example
+.env.local
+.env.*.local
 
 # Database files (SENSITIVE!)
 *.db
 *.db-shm
 *.db-wal
+*.sqlite
+*.sqlite3
 /data/*.db
 /data/*.db-*
 
 # Data directory contents (keep structure only)
 /data/*
 !/data/.gitkeep
+
+# Wallet files (SENSITIVE!)
+id.json
+*.key
+*.pem
+wallet*.json
+keypair*.json
+~/.config/solana/id.json
+**/id.json
+**/wallet*.json
+**/keypair*.json
+*.seed
+*.mnemonic
 
 # IDE / Editor
 .vscode/
@@ -26,20 +45,72 @@ Cargo.lock
 *.swo
 *~
 .DS_Store
+*.sublime-project
+*.sublime-workspace
 
-# Logs
+# Logs (all locations)
 *.log
+*.log.*
+logs/
+**/logs/
+terminal/logs/
+backend/logs/
 
 # OS
 Thumbs.db
+.DS_Store
+Desktop.ini
+$RECYCLE.BIN/
 
 # Temporary files
 *.tmp
 *.temp
+*.bak
+*.backup
+nul
 
 # Claude Code
 .claude/
 
+# Python (for serve.py)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Web build artifacts
+wallet-web/dist/
+wallet-web/trunk-dist/
+*.wasm
+*.wasm.map
+
+# Rust documentation
+/doc/
+**/doc/
+
+# Rust test artifacts
+*.pdb
+*.dSYM/
+
 # Reference materials (use submodules instead)
 /ref/*
 !/ref/README.md
+
+# Coverage reports
+tarpaulin-report.html
+coverage/
+*.gcda
+*.gcno
+
+# Profiling data
+*.profdata
+perf.data
+perf.data.old
+
+# Backup files
+*.orig
+*~

@@ -1,0 +1,49 @@
+[package]
+name = "lib-solana"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Core libraries
+lib-core = { path = "../lib-core" }
+
+# Solana dependencies
+solana-client = "3.0.10"
+solana-sdk = "3.0.0"
+solana-program = "3.0.0"
+spl-token = "9.0.0"
+spl-associated-token-account = "8.0.0"
+bs58 = { workspace = true }
+base64 = "0.22.1"
+bincode = "1.3.3"
+
+# Anchor & Contract Integration
+async-trait = "0.1.89"
+anchor-client = "0.32.1"
+anchor-lang = "0.32.1"
+anchor-spl = "0.32.1"
+xforce-terminal-contracts-client = { path = "../../../../xforce-terminal-contracts/client" }
+
+# HTTP client
+reqwest = { workspace = true }
+
+# Web framework (for contract routes)
+axum = "0.8"
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Error handling
+thiserror = "2.0.17"
+anyhow = "1.0.100"
+
+# Async runtime
+tokio = { workspace = true }
+
+# Utilities
+hex = "0.4.3"
+
+# Logging
+tracing = "0.1.41"
+

@@ -1,0 +1,32 @@
+[package]
+name = "lib-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Database
+sqlx = { version = "0.8.6", features = ["runtime-tokio", "sqlite", "chrono", "migrate"] }
+
+# Error handling
+thiserror = "2.0.17"
+anyhow = "1.0.100"
+
+# Web framework (for IntoResponse trait)
+axum = { version = "0.8.6", features = [] }
+
+# Time
+chrono = { workspace = true }
+
+# Utilities
+lib-utils = { path = "../lib-utils" }
+
+# Environment
+dotenvy = "0.15.7"
+
+# Logging
+tracing = "0.1.41"
+

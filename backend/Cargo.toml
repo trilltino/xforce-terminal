@@ -4,49 +4,29 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# Shared types
-shared = { path = "../shared" }
+# Core libraries
+lib-core = { path = "../crates/libs/lib-core" }
+lib-auth = { path = "../crates/libs/lib-auth" }
+lib-web = { path = "../crates/libs/lib-web", features = ["genai"] }
+lib-solana = { path = "../crates/libs/lib-solana" }
 
-# Web framework
-axum = { version = "0.7", features = ["macros"] }
-tokio = { version = "1", features = ["full"] }
-tower = { version = "0.4" }
-tower-http = { version = "0.5", features = ["cors", "trace"] }
-
-# Serialization
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-
-# Database
-sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "migrate"] }
-
-# Authentication
-argon2 = "0.5"
-jsonwebtoken = "9.2"
-rand_core = { version = "0.6", features = ["getrandom"] }
+# Async runtime
+tokio = { workspace = true }
 
 # Logging
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
 
 # Environment
-dotenvy = "0.15"
+dotenvy = "0.15.7"
 
 # Error handling
-anyhow = "1.0"
-thiserror = "2.0"
+anyhow = "1.0.100"
 
-# Time
-chrono = { version = "0.4", features = ["serde"] }
-
-# Stellar/Soroban
-reqwest = { version = "0.12", features = ["json"] }
-stellar-baselib = "0.5.3"
-soroban-client = "0.5.1"
-uuid = { version = "1.10", features = ["v4", "serde"] }
-hex = "0.4"
-rand = "0.8"
+# Database (for clear_users utility)
+sqlx = { version = "0.8.6", features = ["runtime-tokio", "sqlite"] }
 
 [[bin]]
 name = "backend"
 path = "src/main.rs"
+

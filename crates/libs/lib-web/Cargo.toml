@@ -1,0 +1,61 @@
+[package]
+name = "lib-web"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Core libraries
+lib-core = { path = "../lib-core" }
+lib-auth = { path = "../lib-auth" }
+lib-solana = { path = "../lib-solana" }
+
+# Web framework
+axum = { version = "0.8.6", features = ["ws"] }
+tokio = { workspace = true }
+tower = "0.5.2"
+tower-http = { version = "0.6.6", features = ["cors", "trace"] }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Error handling
+thiserror = "2.0.17"
+anyhow = "1.0.100"
+
+# HTTP client
+reqwest = { workspace = true }
+
+# WebSocket support
+futures-util = "0.3.30"
+tokio-stream = "0.1"
+
+# Utilities
+uuid = { version = "1.18.1", features = ["v4", "serde"] }
+
+# AI chat integration (optional)
+genai = { version = "0.4.3", optional = true }
+
+# Logging
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
+
+# Database
+sqlx = { version = "0.8.6", features = ["runtime-tokio", "postgres", "sqlite", "chrono"] }
+
+# Environment variables
+dotenvy = "0.15.7"
+
+# Solana SDK
+solana-sdk = "3.0.0"
+
+# Serialization/Encoding
+base64 = "0.22.1"
+bincode = "1.3.3"
+
+# Shared workspace dependency
+shared = { workspace = true }
+
+# Chrono (from workspace)
+chrono = { workspace = true }
+
