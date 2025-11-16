@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XForce Terminal - How It All Works Together</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.8;
+            color: #1a1a1a;
+            background: #ffffff;
+            font-size: 18px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px 40px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 15px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 1.4em;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        nav {
+            background: #ffffff;
+            padding: 20px 25px;
+            margin: 30px 0;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            border-bottom: 3px solid #dc2626;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        nav a {
+            color: #dc2626;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-weight: 600;
+            border: 2px solid transparent;
+        }
+
+        nav a:hover {
+            background: #fee2e2;
+            border-color: #dc2626;
+            transform: translateY(-2px);
+            color: #991b1b;
+        }
+
+        section {
+            background: white;
+            margin: 40px 0;
+            padding: 50px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        h2 {
+            color: #dc2626;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 4px solid #dc2626;
+            font-weight: 700;
+        }
+
+        h3 {
+            color: #991b1b;
+            font-size: 1.8em;
+            margin: 40px 0 20px 0;
+            font-weight: 600;
+        }
+
+        h4 {
+            color: #555;
+            font-size: 1.4em;
+            margin: 25px 0 15px 0;
+            font-weight: 600;
+        }
+
+        p {
+            margin: 20px 0;
+            font-size: 1.1em;
+        }
+
+        ul, ol {
+            margin: 20px 0;
+            padding-left: 30px;
+            font-size: 1.1em;
+        }
+
+        li {
+            margin: 12px 0;
+            line-height: 1.8;
+        }
+
+        .diagram-container {
+            background: #ffffff;
+            border: 3px solid #dc2626;
+            border-radius: 12px;
+            padding: 80px 60px;
+            margin: 50px 0;
+            overflow-x: auto;
+            box-shadow: 0 4px 16px rgba(220, 38, 38, 0.15);
+        }
+
+        .diagram {
+            width: 100%;
+            height: auto;
+            min-height: 600px;
+        }
+
+        .component-box {
+            fill: #dc2626;
+            stroke: #991b1b;
+            stroke-width: 4;
+            rx: 10;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .component-text {
+            fill: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 22px;
+            font-weight: 600;
+            text-anchor: middle;
+        }
+
+        .component-label {
+            fill: #2c3e50;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 18px;
+            font-weight: 500;
+            text-anchor: middle;
+        }
+
+        .arrow {
+            stroke: #dc2626;
+            stroke-width: 5;
+            fill: none;
+            marker-end: url(#arrowhead);
+            filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.2));
+        }
+
+        .arrow-label {
+            fill: #dc2626;
+            font-size: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-weight: 700;
+            background: white;
+        }
+
+        .terminal-color { fill: #dc2626; }
+        .contracts-color { fill: #991b1b; }
+        .crypto-info-color { fill: #b91c1c; }
+        .solana-color { fill: #1a1a1a; }
+        .jupiter-color { fill: #7f1d1d; }
+
+        .plain-english {
+            background: #fee2e2;
+            border-left: 5px solid #dc2626;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 30px 0;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);
+        }
+
+        .plain-english h4 {
+            color: #991b1b;
+            margin-top: 0;
+            font-size: 1.3em;
+        }
+
+        .why-matters {
+            background: #fef2f2;
+            border-left: 5px solid #dc2626;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 30px 0;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);
+        }
+
+        .why-matters h4 {
+            color: #991b1b;
+            margin-top: 0;
+            font-size: 1.3em;
+        }
+
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .tech-item {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 6px solid #dc2626;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 2px solid #fee2e2;
+        }
+
+        .tech-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(220, 38, 38, 0.2);
+            border-color: #dc2626;
+        }
+
+        .tech-item h4 {
+            color: #dc2626;
+            margin-top: 0;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .tech-item ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .tech-item li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+            font-size: 1em;
+        }
+
+        .tech-item li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #dc2626;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .code-ref {
+            background: #fee2e2;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', 'Monaco', monospace;
+            font-size: 0.95em;
+            color: #991b1b;
+            border: 1px solid #dc2626;
+        }
+
+        .flow-diagram {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .flow-step {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 6px solid #dc2626;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            border: 2px solid #fee2e2;
+        }
+
+        .flow-step:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+            border-color: #dc2626;
+        }
+
+        .flow-step strong {
+            color: #dc2626;
+            font-size: 1.2em;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .flow-step:not(:last-child):after {
+            content: "↓";
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 32px;
+            color: #dc2626;
+            font-weight: bold;
+        }
+
+        .integration-point {
+            background: #ffffff;
+            border: 3px solid #dc2626;
+            padding: 30px;
+            border-radius: 12px;
+            margin: 25px 0;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+        }
+
+        .integration-point h4 {
+            color: #dc2626;
+            margin-top: 0;
+            font-size: 1.5em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            font-size: 1.05em;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 18px;
+            text-align: left;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        th {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        tr {
+            transition: background 0.2s;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+        }
+
+        .legend {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            border: 2px solid #fee2e2;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            border: 2px solid #ddd;
+        }
+
+        .big-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #dc2626;
+            display: inline-block;
+            margin-right: 15px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+            margin-top: 60px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .section-intro {
+            font-size: 1.3em;
+            color: #555;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+
+        .visual-break {
+            height: 3px;
+            background: linear-gradient(to right, transparent, #dc2626, transparent);
+            margin: 50px 0;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>XForce Terminal Architecture</h1>
+        <p>How Everything Works Together - Explained Simply</p>
+    </header>
+
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="#overview">The Big Picture</a></li>
+                <li><a href="#terminal">Trading Terminal</a></li>
+                <li><a href="#contracts">Smart Contracts</a></li>
+                <li><a href="#crypto-info">News Service</a></li>
+                <li><a href="#integrations">How They Connect</a></li>
+                <li><a href="#data-flows">What Happens When</a></li>
+                <li><a href="#tech-stack">Technologies Used</a></li>
+            </ul>
+        </nav>
+
+        <section id="overview">
+            <h2>The Big Picture</h2>
+            <p class="section-intro">
+                XForce Terminal is actually three separate projects that work together to create a complete trading platform. 
+                Think of it like a restaurant: you have the dining room (the terminal), the kitchen (the contracts), and the 
+                news feed (crypto info) - they all need to work together to give you a great experience.
+            </p>
+            
+            <div class="plain-english">
+                <h4>💡 In Plain English</h4>
+                <p>
+                    The <strong>Trading Terminal</strong> is what you see and use - it's the desktop app where you trade. 
+                    The <strong>Smart Contracts</strong> are special programs on the Solana blockchain that help execute 
+                    multiple trades at once to save you money. The <strong>News Service</strong> collects crypto news from 
+                    around the web and feeds it to your terminal so you can stay informed while trading.
+                </p>
+            </div>
+
+            <div class="diagram-container">
+                <svg class="diagram" viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="18" markerHeight="18" refX="15" refY="6" orient="auto">
+                            <polygon points="0 0, 18 6, 0 12" fill="#dc2626" />
+                        </marker>
+                    </defs>
+
+                    <!-- XForce Terminal - Larger with more space -->
+                    <rect x="50" y="50" width="450" height="320" class="component-box terminal-color" />
+                    <text x="275" y="110" class="component-text" font-size="40" font-weight="bold">XForce Terminal</text>
+                    <text x="275" y="160" class="component-text" font-size="24">The Main App</text>
+                    <text x="275" y="210" class="component-text" font-size="22">Desktop Trading Interface</text>
+                    <text x="275" y="250" class="component-text" font-size="22">Backend Server (Port 3001)</text>
+                    <text x="275" y="290" class="component-text" font-size="22">Web Wallet Helper</text>
+                    <text x="275" y="330" class="component-text" font-size="22">Stores Your Data Locally</text>
+
+                    <!-- XForce Terminal Contracts -->
+                    <rect x="600" y="50" width="450" height="320" class="component-box contracts-color" />
+                    <text x="825" y="110" class="component-text" font-size="40" font-weight="bold">Smart Contracts</text>
+                    <text x="825" y="160" class="component-text" font-size="24">Batch Swap Router</text>
+                    <text x="825" y="210" class="component-text" font-size="22">Lives on Solana Blockchain</text>
+                    <text x="825" y="250" class="component-text" font-size="22">Saves Money on Fees</text>
+                    <text x="825" y="290" class="component-text" font-size="22">Executes Multiple Swaps</text>
+                    <text x="825" y="330" class="component-text" font-size="22">All at Once</text>
+
+                    <!-- XForce Crypto Info -->
+                    <rect x="1150" y="50" width="400" height="320" class="component-box crypto-info-color" />
+                    <text x="1350" y="110" class="component-text" font-size="38" font-weight="bold">News Service</text>
+                    <text x="1350" y="160" class="component-text" font-size="24">Crypto Info Feed</text>
+                    <text x="1350" y="210" class="component-text" font-size="22">Collects News Articles</text>
+                    <text x="1350" y="250" class="component-text" font-size="22">Analyzes Sentiment</text>
+                    <text x="1350" y="290" class="component-text" font-size="22">Serves to Terminal</text>
+                    <text x="1350" y="330" class="component-text" font-size="22">Port 3003</text>
+
+                    <!-- Solana Blockchain - More prominent -->
+                    <rect x="450" y="450" width="700" height="280" class="component-box solana-color" />
+                    <text x="800" y="530" class="component-text" font-size="42" fill="#ffffff" font-weight="bold">Solana Blockchain</text>
+                    <text x="800" y="580" class="component-text" font-size="24" fill="#ffffff">Where Your Trades Happen</text>
+                    <text x="800" y="625" class="component-text" font-size="24" fill="#ffffff">Smart Contracts Live Here</text>
+                    <text x="800" y="670" class="component-text" font-size="24" fill="#ffffff">Transactions Get Processed</text>
+                    <text x="800" y="715" class="component-text" font-size="24" fill="#ffffff">Super Fast & Low Cost</text>
+
+                    <!-- Jupiter Aggregator -->
+                    <rect x="50" y="450" width="350" height="200" class="component-box jupiter-color" />
+                    <text x="225" y="510" class="component-text" font-size="32" font-weight="bold">Jupiter</text>
+                    <text x="225" y="560" class="component-text" font-size="24">Finds Best Prices</text>
+                    <text x="225" y="610" class="component-text" font-size="24">Routes Your Swaps</text>
+
+                    <!-- Connections with better labels -->
+                    <!-- Terminal to Contracts - horizontal arrow above boxes -->
+                    <line x1="500" y1="200" x2="600" y2="200" class="arrow" />
+                    <rect x="530" y="160" width="100" height="60" fill="white" stroke="#dc2626" stroke-width="4" rx="8" />
+                    <text x="580" y="190" class="arrow-label" font-size="20" fill="#dc2626" font-weight="bold">Uses</text>
+                    <text x="580" y="215" class="arrow-label" font-size="18" fill="#dc2626">Library</text>
+
+                    <!-- Contracts to News Service - horizontal arrow above boxes -->
+                    <line x1="1050" y1="200" x2="1150" y2="200" class="arrow" />
+                    <rect x="1080" y="160" width="90" height="60" fill="white" stroke="#dc2626" stroke-width="4" rx="8" />
+                    <text x="1125" y="190" class="arrow-label" font-size="20" fill="#dc2626" font-weight="bold">Gets</text>
+                    <text x="1125" y="215" class="arrow-label" font-size="18" fill="#dc2626">News</text>
+
+                    <!-- Contracts to Solana - vertical arrow with gap -->
+                    <line x1="825" y1="370" x2="825" y2="420" class="arrow" />
+                    <line x1="825" y1="420" x2="800" y2="450" class="arrow" />
+                    <rect x="800" y="390" width="90" height="50" fill="white" stroke="#dc2626" stroke-width="4" rx="8" />
+                    <text x="845" y="418" class="arrow-label" font-size="20" fill="#dc2626" font-weight="bold">Runs</text>
+
+                    <!-- Terminal to Jupiter - diagonal arrow with gap -->
+                    <line x1="275" y1="370" x2="275" y2="420" class="arrow" />
+                    <line x1="275" y1="420" x2="225" y2="450" class="arrow" />
+                    <rect x="200" y="390" width="90" height="50" fill="white" stroke="#dc2626" stroke-width="4" rx="8" />
+                    <text x="245" y="418" class="arrow-label" font-size="20" fill="#dc2626" font-weight="bold">Asks</text>
+
+                    <!-- Terminal to Solana - diagonal arrow with gap, avoiding Contracts box -->
+                    <line x1="275" y1="370" x2="275" y2="420" class="arrow" />
+                    <line x1="275" y1="420" x2="700" y2="450" class="arrow" />
+                    <rect x="450" y="390" width="100" height="50" fill="white" stroke="#dc2626" stroke-width="4" rx="8" />
+                    <text x="500" y="418" class="arrow-label" font-size="20" fill="#dc2626" font-weight="bold">Sends</text>
+                </svg>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color terminal-color"></div>
+                    <span><strong>Trading Terminal</strong> - The main application you use</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color contracts-color"></div>
+                    <span><strong>Smart Contracts</strong> - Programs on Solana that save you money</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color crypto-info-color"></div>
+                    <span><strong>News Service</strong> - Collects and serves crypto news</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color solana-color"></div>
+                    <span><strong>Solana Blockchain</strong> - Where everything happens</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color jupiter-color"></div>
+                    <span><strong>Jupiter</strong> - Finds the best swap prices</span>
+                </div>
+            </div>
+
+            <h3>What Each Part Does</h3>
+            <ul>
+                <li><strong>XForce Terminal</strong> - This is the main app you download and use. It has a beautiful desktop interface (like Bloomberg terminals), a backend server that handles your requests, and a web wallet helper. It's where you see prices, make trades, and manage your portfolio.</li>
+                <li><strong>XForce Terminal Contracts</strong> - These are special programs that live on the Solana blockchain. Their main job is to let you do multiple trades in one transaction, which saves you a lot of money on fees. Instead of paying fees 5 times, you pay once!</li>
+                <li><strong>XForce Crypto Info</strong> - This is like a news aggregator. It constantly scrapes the web for crypto news, analyzes whether articles are positive or negative, and serves them to your terminal so you can make informed trading decisions.</li>
+            </ul>
+        </section>
+
+        <section id="terminal">
+            <h2>The Trading Terminal</h2>
+            <p class="section-intro">
+                The terminal is the heart of the system - it's what you interact with. Think of it as having three main parts: 
+                the beautiful desktop app you see, the backend server that does the heavy lifting, and a web helper for connecting wallets.
+            </p>
+
+            <div class="why-matters">
+                <h4>🎯 Why This Matters</h4>
+                <p>
+                    Most trading tools are web-based, which means they're slower and less secure. By building a native desktop app, 
+                    we get Bloomberg-terminal-level performance. Your private keys never leave your computer, and everything happens 
+                    instantly. Plus, the modular design means other developers can reuse our code to build their own tools.
+                </p>
+            </div>
+            
+            <div class="diagram-container">
+                <svg class="diagram" viewBox="0 0 1500 1100" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Desktop GUI - Top center, prominent -->
+                    <rect x="500" y="50" width="500" height="280" class="component-box terminal-color" />
+                    <text x="750" y="120" class="component-text" font-size="40" font-weight="bold">Desktop App</text>
+                    <text x="750" y="170" class="component-text" font-size="24">What You See</text>
+                    <text x="750" y="215" class="component-text" font-size="22">Bloomberg-Style Interface</text>
+                    <text x="750" y="260" class="component-text" font-size="22">Real-Time Price Updates</text>
+                    <text x="750" y="305" class="component-text" font-size="22">Charts & Trading</text>
+
+                    <!-- Backend API - Left -->
+                    <rect x="50" y="400" width="400" height="260" class="component-box terminal-color" />
+                    <text x="250" y="470" class="component-text" font-size="36" font-weight="bold">Backend Server</text>
+                    <text x="250" y="520" class="component-text" font-size="24">Does the Heavy Lifting</text>
+                    <text x="250" y="565" class="component-text" font-size="22">Handles API Requests</text>
+                    <text x="250" y="610" class="component-text" font-size="22">Talks to Blockchain</text>
+                    <text x="250" y="655" class="component-text" font-size="22">Port 3001</text>
+
+                    <!-- Web Wallet - Right -->
+                    <rect x="1050" y="400" width="400" height="260" class="component-box terminal-color" />
+                    <text x="1250" y="470" class="component-text" font-size="36" font-weight="bold">Web Wallet</text>
+                    <text x="1250" y="520" class="component-text" font-size="24">Browser Helper</text>
+                    <text x="1250" y="565" class="component-text" font-size="22">Connects Wallets</text>
+                    <text x="1250" y="610" class="component-text" font-size="22">Phantom, Solflare</text>
+                    <text x="1250" y="655" class="component-text" font-size="22">Backpack Support</text>
+
+                    <!-- Libraries Row -->
+                    <rect x="50" y="750" width="320" height="200" class="component-box terminal-color" />
+                    <text x="210" y="810" class="component-text" font-size="32" font-weight="bold">lib-solana</text>
+                    <text x="210" y="860" class="component-text" font-size="22">Blockchain Stuff</text>
+                    <text x="210" y="905" class="component-text" font-size="22">Jupiter, Pyth</text>
+                    <text x="210" y="950" class="component-text" font-size="22">Contract Helpers</text>
+
+                    <rect x="400" y="750" width="320" height="200" class="component-box terminal-color" />
+                    <text x="560" y="810" class="component-text" font-size="32" font-weight="bold">lib-core</text>
+                    <text x="560" y="860" class="component-text" font-size="22">Data Models</text>
+                    <text x="560" y="905" class="component-text" font-size="22">User Accounts</text>
+                    <text x="560" y="950" class="component-text" font-size="22">Database Helpers</text>
+
+                    <rect x="750" y="750" width="320" height="200" class="component-box terminal-color" />
+                    <text x="910" y="810" class="component-text" font-size="32" font-weight="bold">lib-web</text>
+                    <text x="910" y="860" class="component-text" font-size="22">Web Server</text>
+                    <text x="910" y="905" class="component-text" font-size="22">API Handlers</text>
+                    <text x="910" y="950" class="component-text" font-size="22">Chat System</text>
+
+                    <rect x="1100" y="750" width="320" height="200" class="component-box terminal-color" />
+                    <text x="1260" y="810" class="component-text" font-size="32" font-weight="bold">lib-auth</text>
+                    <text x="1260" y="860" class="component-text" font-size="22">Login & Security</text>
+                    <text x="1260" y="905" class="component-text" font-size="22">Password Protection</text>
+                    <text x="1260" y="950" class="component-text" font-size="22">Session Management</text>
+
+                    <!-- Database -->
+                    <rect x="600" y="1000" width="400" height="80" class="component-box terminal-color" />
+                    <text x="800" y="1045" class="component-text" font-size="32" font-weight="bold">Local Database</text>
+                    <text x="800" y="1080" class="component-text" font-size="24">Stores Your Data</text>
+
+                    <!-- Connections -->
+                    <!-- Desktop App to Backend Server - diagonal with gap -->
+                    <line x1="750" y1="330" x2="750" y2="360" class="arrow" />
+                    <line x1="750" y1="360" x2="250" y2="400" class="arrow" />
+                    <rect x="450" y="340" width="140" height="40" fill="white" stroke="#dc2626" stroke-width="4" rx="8" />
+                    <text x="520" y="365" class="arrow-label" font-size="20" fill="#dc2626" font-weight="bold">Sends Requests</text>
+                    
+                    <!-- Desktop App to Web Wallet - diagonal with gap -->
+                    <line x1="750" y1="330" x2="750" y2="360" class="arrow" />
+                    <line x1="750" y1="360" x2="1250" y2="400" class="arrow" />
+                    <rect x="950" y="340" width="120" height="40" fill="white" stroke="#dc2626" stroke-width="4" rx="8" />
+                    <text x="1010" y="365" class="arrow-label" font-size="20" fill="#dc2626" font-weight="bold">Uses Helper</text>
+                    
+                    <!-- Backend to Libraries - vertical arrows with gaps -->
+                    <line x1="250" y1="660" x2="250" y2="720" class="arrow" />
+                    <line x1="250" y1="720" x2="210" y2="750" class="arrow" />
+                    <line x1="250" y1="720" x2="560" y2="750" class="arrow" />
+                    <line x1="250" y1="720" x2="910" y2="750" class="arrow" />
+                    
+                    <!-- Web Wallet to lib-auth - vertical arrow with gap -->
+                    <line x1="1250" y1="660" x2="1250" y2="720" class="arrow" />
+                    <line x1="1250" y1="720" x2="1260" y2="750" class="arrow" />
+                    
+                    <!-- lib-web to Database - vertical arrow with gap -->
+                    <line x1="910" y1="950" x2="910" y2="980" class="arrow" />
+                    <line x1="910" y1="980" x2="800" y2="1000" class="arrow" />
+                </svg>
+            </div>
+
+            <h3>The Three Main Parts</h3>
+            
+            <h4>1. Desktop App (What You See)</h4>
+            <p>
+                This is the beautiful Bloomberg-style interface that runs on your computer. It shows you real-time prices, 
+                lets you make trades, displays charts, and keeps track of your portfolio. It's built with Rust for maximum 
+                speed and security.
+            </p>
+            <ul>
+                <li><strong>What it does:</strong> Shows you everything in a professional trading interface</li>
+                <li><strong>Why it's special:</strong> Native desktop app means it's super fast - updates happen in less than 50 milliseconds</li>
+                <li><strong>Where it lives:</strong> <span class="code-ref">terminal/</span> folder</li>
+            </ul>
+
+            <h4>2. Backend Server (The Worker)</h4>
+            <p>
+                This is the server that runs in the background. When you click "swap tokens" in the desktop app, it's the backend 
+                that talks to Jupiter to find the best price, builds the transaction, and sends it to Solana. It also stores 
+                your trading history and handles authentication.
+            </p>
+            <ul>
+                <li><strong>What it does:</strong> Handles all the complex work behind the scenes</li>
+                <li><strong>Why it's special:</strong> Built with Axum (a super fast Rust web framework) - can handle thousands of requests per second</li>
+                <li><strong>Where it lives:</strong> <span class="code-ref">backend/</span> folder, runs on port 3001</li>
+            </ul>
+
+            <h4>3. Web Wallet Helper (Browser Tool)</h4>
+            <p>
+                This is a small web app that helps you connect popular wallets like Phantom, Solflare, or Backpack. It runs in 
+                your browser and makes it easy to link your existing wallet to the terminal.
+            </p>
+            <ul>
+                <li><strong>What it does:</strong> Makes wallet connection simple and secure</li>
+                <li><strong>Why it's special:</strong> Works with all major Solana wallets</li>
+                <li><strong>Where it lives:</strong> <span class="code-ref">wallet-web/</span> folder</li>
+            </ul>
+
+            <h3>The Helper Libraries</h3>
+            <p>
+                These are reusable code packages that make everything work. Think of them as toolboxes - each one has specific 
+                tools for specific jobs.
+            </p>
+            <table>
+                <tr>
+                    <th>Library</th>
+                    <th>What It Does</th>
+                    <th>Why You Care</th>
+                </tr>
+                <tr>
+                    <td><span class="code-ref">lib-solana</span></td>
+                    <td>Handles all blockchain communication</td>
+                    <td>Talks to Solana, gets prices from Jupiter, executes swaps</td>
+                </tr>
+                <tr>
+                    <td><span class="code-ref">lib-core</span></td>
+                    <td>Manages your data</td>
+                    <td>Stores your account info, trading history, messages</td>
+                </tr>
+                <tr>
+                    <td><span class="code-ref">lib-web</span></td>
+                    <td>Handles web requests</td>
+                    <td>Processes API calls, manages chat, serves data</td>
+                </tr>
+                <tr>
+                    <td><span class="code-ref">lib-auth</span></td>
+                    <td>Keeps you secure</td>
+                    <td>Handles login, password protection, session management</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="contracts">
+            <h2>The Smart Contracts</h2>
+            <p class="section-intro">
+                Smart contracts are programs that live on the Solana blockchain. Our main contract is called the "Batch Swap Router" 
+                and it does something really clever: it lets you do multiple trades in a single transaction, which saves you a ton of money.
+            </p>
+
+            <div class="plain-english">
+                <h4>💡 In Plain English</h4>
+                <p>
+                    Normally, if you want to swap SOL → USDC → BONK → RAY, you'd need to do three separate transactions and pay 
+                    fees three times. Our batch swap contract lets you do all three swaps in ONE transaction, so you only pay fees once. 
+                    This can save you 60-90% on transaction costs!
+                </p>
+            </div>
+            
+            <div class="diagram-container">
+                <svg class="diagram" viewBox="0 0 1400 800" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Solana Program - Top -->
+                    <rect x="400" y="50" width="600" height="280" class="component-box contracts-color" />
+                    <text x="700" y="130" class="component-text" font-size="40" font-weight="bold">Batch Swap Router</text>
+                    <text x="700" y="180" class="component-text" font-size="24">Smart Contract Program</text>
+                    <text x="700" y="220" class="component-text" font-size="22">Lives on Solana Blockchain</text>
+                    <text x="700" y="260" class="component-text" font-size="20">Program ID:</text>
+                    <text x="700" y="295" class="component-text" font-size="18">HS63bw1V1qTM5uWf92q3uaFdqogrc4SN9qUJSR8aqBMx</text>
+                    <text x="700" y="330" class="component-text" font-size="22">Saves You Money!</text>
+
+                    <!-- Client Library - Left -->
+                    <rect x="50" y="400" width="420" height="280" class="component-box contracts-color" />
+                    <text x="260" y="470" class="component-text" font-size="36" font-weight="bold">Client Library</text>
+                    <text x="260" y="520" class="component-text" font-size="24">Rust Code</text>
+                    <text x="260" y="565" class="component-text" font-size="22">Easy to Use</text>
+                    <text x="260" y="610" class="component-text" font-size="22">Builds Transactions</text>
+                    <text x="260" y="655" class="component-text" font-size="22">Handles Errors</text>
+                    <text x="260" y="700" class="component-text" font-size="22">Terminal Uses This</text>
+
+                    <!-- Solana Blockchain - Bottom -->
+                    <rect x="520" y="400" width="650" height="280" class="component-box solana-color" />
+                    <text x="845" y="470" class="component-text" font-size="38" fill="#ffffff" font-weight="bold">Solana Blockchain</text>
+                    <text x="845" y="520" class="component-text" font-size="24" fill="#ffffff">Where Contract Lives</text>
+                    <text x="845" y="565" class="component-text" font-size="24" fill="#ffffff">Executes Your Swaps</text>
+                    <text x="845" y="610" class="component-text" font-size="24" fill="#ffffff">Super Fast & Cheap</text>
+                    <text x="845" y="655" class="component-text" font-size="24" fill="#ffffff">All Transactions Recorded</text>
+                    <text x="845" y="700" class="component-text" font-size="24" fill="#ffffff">Forever & Always</text>
+
+                    <!-- Connections -->
+                    <!-- Batch Swap Router to Solana - vertical arrow with gap -->
+                    <line x1="700" y1="330" x2="700" y2="380" class="arrow" />
+                    <line x1="700" y1="380" x2="845" y2="400" class="arrow" />
+                    <rect x="750" y="345" width="110" height="45" fill="white" stroke="#dc2626" stroke-width="4" rx="8" />
+                    <text x="805" y="372" class="arrow-label" font-size="20" fill="#dc2626" font-weight="bold">Deployed</text>
+
+                    <!-- Client Library to Solana - horizontal arrow with gap above boxes -->
+                    <line x1="470" y1="380" x2="520" y2="380" class="arrow" />
+                    <line x1="520" y1="380" x2="520" y2="400" class="arrow" />
+                    <rect x="480" y="350" width="90" height="60" fill="white" stroke="#dc2626" stroke-width="4" rx="8" />
+                    <text x="525" y="375" class="arrow-label" font-size="20" fill="#dc2626" font-weight="bold">Uses</text>
+                    <text x="525" y="400" class="arrow-label" font-size="18" fill="#dc2626">Library</text>
+                </svg>
+            </div>
+
+            <h3>How It Works</h3>
+            <p>
+                The batch swap router is a program that's been deployed to the Solana blockchain. When you want to do multiple swaps, 
+                the terminal uses a special library (the "client") to build a transaction that calls this program. The program then 
+                executes all your swaps at once, atomically - meaning either they all succeed or they all fail. No partial swaps!
+            </p>
+
+            <div class="why-matters">
+                <h4>🎯 Why This Matters</h4>
+                <p>
+                    Solana transaction fees are already super low (like $0.00025), but if you're doing complex trading strategies 
+                    with multiple swaps, those fees add up. By batching swaps, you can execute sophisticated trading strategies 
+                    for the cost of a single transaction. This makes advanced trading accessible to everyone, not just whales.
+                </p>
+            </div>
+
+            <h3>What the Contract Can Do</h3>
+            <table>
+                <tr>
+                    <th>Feature</th>
+                    <th>What It Means</th>
+                    <th>Why It's Cool</th>
+                </tr>
+                <tr>
+                    <td><strong>Batch Swaps</strong></td>
+                    <td>Do up to 10 swaps in one transaction</td>
+                    <td>Save 60-90% on fees compared to doing them separately</td>
+                </tr>
+                <tr>
+                    <td><strong>Atomic Execution</strong></td>
+                    <td>All swaps succeed or all fail together</td>
+                    <td>No risk of partial execution - you're protected</td>
+                </tr>
+                <tr>
+                    <td><strong>Slippage Protection</strong></td>
+                    <td>Won't execute if price moves too much</td>
+                    <td>Prevents bad trades from market volatility</td>
+                </tr>
+                <tr>
+                    <td><strong>Fee Management</strong></td>
+                    <td>Calculates and tracks fees transparently</td>
+                    <td>You always know what you're paying</td>
+                </tr>
+            </table>
+
+            <h3>The Client Library</h3>
+            <p>
+                The client library is like a translator between the terminal and the smart contract. Instead of having to write 
+                complex blockchain code every time, developers can just use simple functions like "execute batch swap" and the 
+                library handles all the complicated stuff.
+            </p>
+            <ul>
+                <li><strong>What it does:</strong> Makes it easy to interact with the smart contract</li>
+                <li><strong>Why it's special:</strong> Type-safe - the compiler catches errors before you even run the code</li>
+                <li><strong>Where it lives:</strong> <span class="code-ref">xforce-terminal-contracts/client/</span></li>
+                <li><strong>How terminal uses it:</strong> The terminal includes this library and calls its functions</li>
+            </ul>
+        </section>
+
+        <section id="crypto-info">
+            <h2>The News Service</h2>
+            <p class="section-intro">
+                The news service is like having a personal assistant that reads crypto news 24/7 and summarizes it for you. 
+                It scrapes articles from all over the web, figures out if they're positive or negative, and feeds them to your 
+                terminal so you can make informed trading decisions.
+            </p>
+
+            <div class="plain-english">
+                <h4>💡 In Plain English</h4>
+                <p>
+                    Imagine you're trading and want to know what's happening in crypto news. Instead of opening 10 different 
+                    websites, the news service does that for you. It reads articles from CoinDesk, CoinTelegraph, RSS feeds, 
+                    and more, figures out if each article is bullish or bearish, and shows you the most relevant news right 
+                    in your trading terminal.
+                </p>
+            </div>
+            
+            <div class="diagram-container">
+                <svg class="diagram" viewBox="0 0 1500 800" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Python Scraper - Left -->
+                    <rect x="50" y="50" width="400" height="260" class="component-box crypto-info-color" />
+                    <text x="250" y="110" class="component-text" font-size="36" font-weight="bold">Python Scraper</text>
+                    <text x="250" y="160" class="component-text" font-size="24">Runs Every 15 Minutes</text>
+                    <text x="250" y="205" class="component-text" font-size="22">Reads News Websites</text>
+                    <text x="250" y="250" class="component-text" font-size="22">RSS Feeds & APIs</text>
+                    <text x="250" y="295" class="component-text" font-size="22">Cleans Up Data</text>
+
+                    <!-- PostgreSQL - Center -->
+                    <rect x="550" y="50" width="400" height="260" class="component-box crypto-info-color" />
+                    <text x="750" y="110" class="component-text" font-size="36" font-weight="bold">PostgreSQL Database</text>
+                    <text x="750" y="160" class="component-text" font-size="24">Stores Everything</text>
+                    <text x="750" y="205" class="component-text" font-size="22">Articles, Sources</text>
+                    <text x="750" y="250" class="component-text" font-size="22">Sentiment Scores</text>
+                    <text x="750" y="295" class="component-text" font-size="22">Analytics Data</text>
+
+                    <!-- Rust API Server - Right -->
+                    <rect x="1050" y="50" width="400" height="260" class="component-box crypto-info-color" />
+                    <text x="1250" y="110" class="component-text" font-size="36" font-weight="bold">Rust API Server</text>
+                    <text x="1250" y="160" class="component-text" font-size="24">Serves News to Terminal</text>
+                    <text x="1250" y="205" class="component-text" font-size="22">Port 3003</text>
+                    <text x="1250" y="250" class="component-text" font-size="22">REST API</text>
+                    <text x="1250" y="295" class="component-text" font-size="22">Fast & Reliable</text>
+
+                    <!-- Terminal Connection - Bottom -->
+                    <rect x="550" y="400" width="500" height="180" class="component-box terminal-color" />
+                    <text x="800" y="460" class="component-text" font-size="36" font-weight="bold">XForce Terminal</text>
+                    <text x="800" y="510" class="component-text" font-size="24">Gets News Feed</text>
+                    <text x="800" y="555" class="component-text" font-size="22">Displays in Interface</text>
+                    <text x="800" y="600" class="component-text" font-size="22">Helps You Trade Smarter</text>
+
+                    <!-- Connections -->
+                    <!-- Python Scraper to PostgreSQL - horizontal arrow between boxes -->
+                    <line x1="450" y1="180" x2="550" y2="180" class="arrow" />
+                    <rect x="480" y="150" width="100" height="60" fill="white" stroke="#dc2626" stroke-width="4" rx="8" />
+                    <text x="530" y="175" class="arrow-label" font-size="20" fill="#dc2626" font-weight="bold">Saves</text>
+                    <text x="530" y="200" class="arrow-label" font-size="18" fill="#dc2626">Articles</text>
+
+                    <!-- PostgreSQL to Rust API - horizontal arrow between boxes -->
+                    <line x1="950" y1="180" x2="1050" y2="180" class="arrow" />
+                    <rect x="980" y="150" width="100" height="60" fill="white" stroke="#dc2626" stroke-width="4" rx="8" />
+                    <text x="1030" y="175" class="arrow-label" font-size="20" fill="#dc2626" font-weight="bold">Reads</text>
+                    <text x="1030" y="200" class="arrow-label" font-size="18" fill="#dc2626">From DB</text>
+
+                    <!-- Rust API to Terminal - diagonal arrow with gap -->
+                    <line x1="1250" y1="310" x2="1250" y2="350" class="arrow" />
+                    <line x1="1250" y1="350" x2="800" y2="400" class="arrow" />
+                    <rect x="1000" y="330" width="100" height="50" fill="white" stroke="#dc2626" stroke-width="4" rx="8" />
+                    <text x="1050" y="358" class="arrow-label" font-size="20" fill="#dc2626" font-weight="bold">Serves</text>
+                </svg>
+            </div>
+
+            <h3>How News Gets to You</h3>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <strong>Step 1: Scraper Runs</strong><br>
+                    Every 15 minutes, a Python script wakes up and visits crypto news websites. It reads RSS feeds, 
+                    calls news APIs, and collects articles from CoinDesk, CoinTelegraph, and other sources.
+                </div>
+                <div class="flow-step">
+                    <strong>Step 2: Data Gets Cleaned</strong><br>
+                    The scraper uses Polars (a super fast data processing tool) to clean up the articles - removes duplicates, 
+                    fixes formatting, and categorizes them (crypto, bitcoin, financial, etc.).
+                </div>
+                <div class="flow-step">
+                    <strong>Step 3: Sentiment Analysis</strong><br>
+                    Each article gets analyzed to determine if it's positive, negative, or neutral. This helps you quickly 
+                    see if news is bullish or bearish for the market.
+                </div>
+                <div class="flow-step">
+                    <strong>Step 4: Stored in Database</strong><br>
+                    Everything gets saved to a PostgreSQL database - articles, sources, sentiment scores, and analytics. 
+                    This database can hold millions of articles and search through them instantly.
+                </div>
+                <div class="flow-step">
+                    <strong>Step 5: Terminal Requests News</strong><br>
+                    When you open your terminal, it asks the news service "give me the latest crypto news" via an HTTP request.
+                </div>
+                <div class="flow-step">
+                    <strong>Step 6: News Served to Terminal</strong><br>
+                    The Rust API server quickly finds the latest articles, formats them nicely, and sends them back to your terminal.
+                </div>
+                <div class="flow-step">
+                    <strong>Step 7: You See It in Your Terminal</strong><br>
+                    The news appears in your trading interface, so you can see what's happening in crypto while you trade. 
+                    No need to switch between apps!
+                </div>
+            </div>
+
+            <h3>The Three Parts of the News Service</h3>
+            
+            <h4>1. Python Scraper (The Collector)</h4>
+            <p>
+                This is a Python script that runs continuously. It visits news websites, reads RSS feeds, calls APIs, 
+                and collects articles. It's like having a robot that reads crypto news 24/7 so you don't have to.
+            </p>
+            <ul>
+                <li><strong>What it does:</strong> Collects news from multiple sources automatically</li>
+                <li><strong>How often:</strong> Runs every 15 minutes (you can change this)</li>
+                <li><strong>Where it lives:</strong> <span class="code-ref">news-scraper/</span> folder</li>
+            </ul>
+
+            <h4>2. PostgreSQL Database (The Storage)</h4>
+            <p>
+                This is where all the news gets stored. It's a powerful database that can hold millions of articles and 
+                search through them in milliseconds. It also tracks analytics like which sources are most popular, what 
+                times of day news breaks, etc.
+            </p>
+            <ul>
+                <li><strong>What it stores:</strong> Articles, sources, sentiment scores, analytics</li>
+                <li><strong>Why PostgreSQL:</strong> Super fast, reliable, handles huge amounts of data</li>
+                <li><strong>Where it lives:</strong> Runs as a separate database server</li>
+            </ul>
+
+            <h4>3. Rust API Server (The Server)</h4>
+            <p>
+                This is a web server built with Rust that serves news to your terminal. When your terminal asks for news, 
+                this server quickly finds the relevant articles and sends them back. It's super fast because it's written in Rust.
+            </p>
+            <ul>
+                <li><strong>What it does:</strong> Serves news articles via REST API</li>
+                <li><strong>How fast:</strong> Can handle thousands of requests per second</li>
+                <li><strong>Where it lives:</strong> <span class="code-ref">news-service/</span> folder, runs on port 3003</li>
+            </ul>
+
+            <h3>What You Can Ask For</h3>
+            <p>
+                The news service has several endpoints (ways to ask for data) that your terminal can use:
+            </p>
+            <table>
+                <tr>
+                    <th>What You Ask For</th>
+                    <th>What You Get</th>
+                </tr>
+                <tr>
+                    <td><strong>Latest News</strong></td>
+                    <td>Get the most recent articles, sorted by date</td>
+                </tr>
+                <tr>
+                    <td><strong>News by Category</strong></td>
+                    <td>Filter by "crypto", "bitcoin", "financial", etc.</td>
+                </tr>
+                <tr>
+                    <td><strong>Search Articles</strong></td>
+                    <td>Search for specific topics or keywords</td>
+                </tr>
+                <tr>
+                    <td><strong>Sentiment Analysis</strong></td>
+                    <td>See if an article is positive, negative, or neutral</td>
+                </tr>
+                <tr>
+                    <td><strong>Free Sources</strong></td>
+                    <td>Get news from sources that don't require API keys</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="integrations">
+            <h2>How Everything Connects</h2>
+            <p class="section-intro">
+                Now let's talk about how these three projects actually talk to each other. Understanding these connections 
+                helps you see how the whole system works together seamlessly.
+            </p>
+
+            <div class="integration-point">
+                <h4>🔗 Terminal ↔ Contracts: Using the Library</h4>
+                <p>
+                    <strong>How they connect:</strong> The terminal includes the contracts client library directly in its code. 
+                    It's like having a toolbox built right into the terminal - when you need to interact with the smart contract, 
+                    the tools are already there.
+                </p>
+                <p>
+                    <strong>What this means:</strong> When you click "execute batch swap" in the terminal, it uses code from the 
+                    contracts library to build the transaction. The library knows exactly how to talk to the smart contract because 
+                    it was designed specifically for it.
+                </p>
+                <ul>
+                    <li><strong>Type of connection:</strong> Code library (compiled into the terminal)</li>
+                    <li><strong>When it happens:</strong> When you build/compile the terminal</li>
+                    <li><strong>Why it's good:</strong> Super fast, no network calls needed, type-safe (catches errors before running)</li>
+                </ul>
+            </div>
+
+            <div class="integration-point">
+                <h4>🌐 Terminal ↔ News Service: HTTP Requests</h4>
+                <p>
+                    <strong>How they connect:</strong> The terminal makes HTTP requests (like visiting a website) to the news service. 
+                    It's like asking a friend "what's the latest news?" and they tell you.
+                </p>
+                <p>
+                    <strong>What this means:</strong> When you open your terminal, it sends a request to the news service asking for 
+                    the latest articles. The news service responds with a list of articles, and your terminal displays them. 
+                    This happens over the network, so both services can run on different computers.
+                </p>
+                <ul>
+                    <li><strong>Type of connection:</strong> HTTP REST API (like a website API)</li>
+                    <li><strong>When it happens:</strong> When you use the terminal (runtime)</li>
+                    <li><strong>Where it connects:</strong> News service runs on port 3003</li>
+                    <li><strong>Why it's good:</strong> Flexible - news service can be on a different computer, easy to update independently</li>
+                </ul>
+            </div>
+
+            <div class="integration-point">
+                <h4>⛓️ Terminal ↔ Solana Blockchain: Direct Communication</h4>
+                <p>
+                    <strong>How they connect:</strong> The terminal talks directly to the Solana blockchain using RPC (Remote Procedure Call) 
+                    endpoints. Think of it like making a phone call to Solana - you ask questions and get answers.
+                </p>
+                <p>
+                    <strong>What this means:</strong> When you want to check your balance, submit a transaction, or query account data, 
+                    the terminal sends a request to a Solana RPC node (like Helius or a public endpoint). The node processes your request 
+                    and sends back the answer.
+                </p>
+                <ul>
+                    <li><strong>Type of connection:</strong> RPC calls (like API calls but for blockchain)</li>
+                    <li><strong>When it happens:</strong> Every time you interact with the blockchain</li>
+                    <li><strong>What it does:</strong> Submits transactions, queries balances, gets account info</li>
+                    <li><strong>Why it's good:</strong> Direct connection means fast responses, you're talking to the source</li>
+                </ul>
+            </div>
+
+            <div class="integration-point">
+                <h4>🚀 Contracts ↔ Solana Blockchain: Deployed Program</h4>
+                <p>
+                    <strong>How they connect:</strong> The smart contract is actually deployed (uploaded) to the Solana blockchain. 
+                    It's like publishing a book - once it's on the blockchain, anyone can use it, and it stays there forever.
+                </p>
+                <p>
+                    <strong>What this means:</strong> The batch swap router program lives on Solana at a specific address (the Program ID). 
+                    When you send a transaction that calls this program, Solana validators execute it. The program has its own account 
+                    on the blockchain where it stores data.
+                </p>
+                <ul>
+                    <li><strong>Type of connection:</strong> Deployed program (lives on blockchain)</li>
+                    <li><strong>Program ID:</strong> HS63bw1V1qTM5uWf92q3uaFdqogrc4SN9qUJSR8aqBMx</li>
+                    <li><strong>What it does:</strong> Executes batch swaps when called by transactions</li>
+                    <li><strong>Why it's good:</strong> Immutable (can't be changed), transparent, trustless</li>
+                </ul>
+            </div>
+
+            <div class="integration-point">
+                <h4>🔄 Terminal ↔ Jupiter: Price Finding Service</h4>
+                <p>
+                    <strong>How they connect:</strong> The terminal asks Jupiter (a DEX aggregator) for the best swap prices. 
+                    Jupiter checks all the different exchanges on Solana and tells you which one has the best deal.
+                </p>
+                <p>
+                    <strong>What this means:</strong> When you want to swap tokens, the terminal doesn't just pick a random exchange. 
+                    It asks Jupiter "where can I get the best price for this swap?" and Jupiter responds with the optimal route, 
+                    which might involve multiple exchanges to get you the best deal.
+                </p>
+                <ul>
+                    <li><strong>Type of connection:</strong> HTTP API calls</li>
+                    <li><strong>What Jupiter does:</strong> Finds best prices across all Solana DEXs</li>
+                    <li><strong>Why it's good:</strong> You always get the best price, saves you money automatically</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="data-flows">
+            <h2>What Happens When You Do Things</h2>
+            <p class="section-intro">
+                Let's walk through exactly what happens when you perform common actions. This shows you how all the pieces 
+                work together in real-time.
+            </p>
+
+            <h3>When You Execute a Swap</h3>
+            <p>
+                This is the most complex flow - let's see what happens step by step when you swap tokens:
+            </p>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <span class="big-number">1</span>
+                    <strong>You Click "Swap"</strong><br>
+                    In the desktop app, you select SOL and USDC, enter an amount, and click the swap button. 
+                    The app immediately shows you a loading indicator.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">2</span>
+                    <strong>App Asks Backend for Quote</strong><br>
+                    The desktop app sends a request to the backend server: "Hey, what would I get if I swap 1 SOL for USDC?" 
+                    The backend needs to find the best price.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">3</span>
+                    <strong>Backend Asks Jupiter</strong><br>
+                    The backend server asks Jupiter: "What's the best price for SOL → USDC?" Jupiter checks all the exchanges 
+                    (Raydium, Orca, etc.) and responds with the best route and expected output amount.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">4</span>
+                    <strong>Backend Builds Transaction</strong><br>
+                    The backend uses the contracts client library to build a transaction. It includes the Jupiter swap instructions 
+                    AND a call to our batch swap contract to track and validate everything.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">5</span>
+                    <strong>Transaction Sent to You</strong><br>
+                    The backend sends the unsigned transaction back to your desktop app. It's like a form that needs your signature 
+                    before it can be submitted.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">6</span>
+                    <strong>You Review and Approve</strong><br>
+                    The app shows you the details: "Swap 1 SOL for ~150 USDC, slippage 0.5%". You review it and click "Confirm". 
+                    This is your chance to make sure everything looks right.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">7</span>
+                    <strong>Transaction Gets Signed</strong><br>
+                    Your wallet signs the transaction using your private key. This happens 100% on your computer - your private key 
+                    never leaves your device. The signature proves you authorized this transaction.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">8</span>
+                    <strong>Signed Transaction Sent to Backend</strong><br>
+                    The signed transaction is sent back to the backend server. It's now ready to be submitted to Solana.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">9</span>
+                    <strong>Backend Submits to Solana</strong><br>
+                    The backend sends the transaction to a Solana RPC node. The node broadcasts it to the network, and validators 
+                    start processing it.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">10</span>
+                    <strong>Smart Contract Executes</strong><br>
+                    Solana validators execute the transaction. The batch swap contract validates everything, Jupiter executes the swap 
+                    on the best exchange, and your tokens are swapped. All of this happens in less than a second!
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">11</span>
+                    <strong>Success! Transaction Recorded</strong><br>
+                    The backend saves your swap to the local database so you can see it in your transaction history. The app updates 
+                    to show your new balances. You're done!
+                </div>
+            </div>
+
+            <div class="plain-english">
+                <h4>💡 In Plain English</h4>
+                <p>
+                    Think of it like ordering food delivery: You place an order (click swap), the restaurant checks what's available 
+                    (Jupiter finds best price), they prepare it (build transaction), you sign the receipt (sign transaction), they deliver 
+                    (submit to Solana), and you get your food (tokens swapped). The whole process takes seconds, not minutes!
+                </p>
+            </div>
+
+            <h3>When News Gets Updated</h3>
+            <p>
+                Here's what happens behind the scenes to keep your news feed fresh:
+            </p>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <span class="big-number">1</span>
+                    <strong>Scraper Wakes Up</strong><br>
+                    Every 15 minutes, the Python scraper automatically runs. It's like an alarm clock that goes off regularly.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">2</span>
+                    <strong>Visits News Websites</strong><br>
+                    The scraper visits CoinDesk, CoinTelegraph, RSS feeds, and news APIs. It reads all the latest articles, 
+                    like a robot browsing the web.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">3</span>
+                    <strong>Cleans and Processes</strong><br>
+                    Using Polars (super fast data tool), it removes duplicates, fixes formatting issues, and categorizes articles. 
+                    It's like organizing a messy pile of papers.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">4</span>
+                    <strong>Analyzes Sentiment</strong><br>
+                    Each article gets analyzed: is it positive (bullish), negative (bearish), or neutral? This helps you quickly 
+                    understand market sentiment.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">5</span>
+                    <strong>Saves to Database</strong><br>
+                    Everything gets stored in PostgreSQL - articles, sources, sentiment scores. The database can hold millions 
+                    of articles and search them instantly.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">6</span>
+                    <strong>Terminal Asks for News</strong><br>
+                    When you open your terminal or refresh the news section, it sends a request: "Give me the latest 20 articles."
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">7</span>
+                    <strong>API Server Responds</strong><br>
+                    The Rust API server quickly finds the latest articles, formats them nicely as JSON, and sends them back. 
+                    This happens in milliseconds.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">8</span>
+                    <strong>You See Fresh News</strong><br>
+                    Your terminal displays the news in a nice interface. You can read headlines, see sentiment, and click to 
+                    read full articles - all without leaving your trading terminal!
+                </div>
+            </div>
+
+            <h3>When You Use Batch Swaps</h3>
+            <p>
+                Batch swaps are special - they let you do multiple trades at once. Here's how that works:
+            </p>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <span class="big-number">1</span>
+                    <strong>You Plan Multiple Swaps</strong><br>
+                    You want to do: SOL → USDC → BONK → RAY. Instead of doing three separate transactions, you set up a batch swap.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">2</span>
+                    <strong>Terminal Uses Contracts Library</strong><br>
+                    The terminal uses the contracts client library to build a special transaction. This library knows how to talk 
+                    to the batch swap contract.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">3</span>
+                    <strong>Gets Quotes for Each Swap</strong><br>
+                    For each swap in your batch, the terminal asks Jupiter for the best price. It collects all the quotes.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">4</span>
+                    <strong>Builds Batch Transaction</strong><br>
+                    The library builds one transaction that includes all three swaps plus a call to the batch swap contract. 
+                    This is the magic - one transaction, multiple swaps!
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">5</span>
+                    <strong>You Sign Once</strong><br>
+                    You sign the single transaction (not three separate ones). This saves you time and money.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">6</span>
+                    <strong>Submitted to Solana</strong><br>
+                    The transaction goes to Solana. Validators see it's a batch swap and process all swaps together.
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">7</span>
+                    <strong>Contract Validates Everything</strong><br>
+                    The batch swap contract checks that all swaps are valid, amounts are correct, and slippage is acceptable. 
+                    If anything is wrong, the whole transaction fails (protecting you).
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">8</span>
+                    <strong>All Swaps Execute Together</strong><br>
+                    If validation passes, all three swaps execute atomically - they all succeed or all fail. No partial execution!
+                </div>
+                <div class="flow-step">
+                    <span class="big-number">9</span>
+                    <strong>You Saved Money!</strong><br>
+                    Instead of paying transaction fees three times, you paid once. You saved 66% on fees! Plus, all swaps happened 
+                    instantly, so you didn't risk price changes between swaps.
+                </div>
+            </div>
+
+            <div class="why-matters">
+                <h4>🎯 Why This Matters</h4>
+                <p>
+                    Batch swaps enable complex trading strategies that would be too expensive otherwise. Want to rebalance your 
+                    portfolio across 5 tokens? Without batch swaps, that's 4 transactions and 4x the fees. With batch swaps, 
+                    it's one transaction and one fee. This makes sophisticated trading accessible to everyone, not just people 
+                    with huge amounts of capital.
+                </p>
+            </div>
+        </section>
+
+        <section id="tech-stack">
+            <h2>Technologies Used</h2>
+            <p class="section-intro">
+                Here's a simple breakdown of all the technologies we use and why we chose them. Don't worry if you don't know 
+                what some of these are - the important thing is understanding what each project uses.
+            </p>
+
+            <div class="tech-stack">
+                <div class="tech-item">
+                    <h4>XForce Terminal</h4>
+                    <ul>
+                        <li><strong>Rust</strong> - The programming language (super fast and safe)</li>
+                        <li><strong>egui</strong> - Makes the desktop interface</li>
+                        <li><strong>Axum</strong> - The web server framework</li>
+                        <li><strong>Leptos</strong> - For the web wallet (compiles to web code)</li>
+                        <li><strong>SQLite</strong> - Local database (stores your data)</li>
+                        <li><strong>Tokio</strong> - Handles async operations (doing multiple things at once)</li>
+                        <li><strong>Solana SDK</strong> - Talks to the Solana blockchain</li>
+                        <li><strong>JWT</strong> - For secure login</li>
+                        <li><strong>Braid Protocol</strong> - For messaging (CRDT-based)</li>
+                        <li><strong>rust-genai</strong> - AI assistant in the terminal</li>
+                    </ul>
+                </div>
+
+                <div class="tech-item">
+                    <h4>Smart Contracts</h4>
+                    <ul>
+                        <li><strong>Rust</strong> - Same language as terminal (consistency!)</li>
+                        <li><strong>Anchor</strong> - Framework for building Solana programs</li>
+                        <li><strong>Solana Program Framework</strong> - The base layer</li>
+                        <li><strong>anchor-client</strong> - Library for interacting with contracts</li>
+                    </ul>
+                </div>
+
+                <div class="tech-item">
+                    <h4>News Service</h4>
+                    <ul>
+                        <li><strong>Rust + Axum</strong> - Fast API server</li>
+                        <li><strong>PostgreSQL</strong> - Powerful database</li>
+                        <li><strong>Python</strong> - For the scraper (great for web scraping)</li>
+                        <li><strong>Polars</strong> - Super fast data processing</li>
+                        <li><strong>Leptos</strong> - Web frontend for browsing news</li>
+                    </ul>
+                </div>
+
+                <div class="tech-item">
+                    <h4>External Services</h4>
+                    <ul>
+                        <li><strong>Jupiter</strong> - Finds best swap prices</li>
+                        <li><strong>Pyth</strong> - Provides price oracle data</li>
+                        <li><strong>Solana RPC</strong> - Helius or public endpoints</li>
+                        <li><strong>News APIs</strong> - NewsAPI, CryptoCompare, RSS feeds</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="plain-english">
+                <h4>💡 Why Rust?</h4>
+                <p>
+                    Almost everything is written in Rust because it's incredibly fast (as fast as C++), memory-safe (catches bugs 
+                    before they happen), and perfect for systems programming. When you're dealing with money and blockchain transactions, 
+                    you want a language that won't let you make mistakes. Rust's compiler is like a very strict teacher that catches 
+                    errors before your code even runs.
+                </p>
+            </div>
+
+            <h3>Development Tools</h3>
+            <p>
+                To build and work with these projects, we use:
+            </p>
+            <ul>
+                <li><strong>Cargo</strong> - Rust's build system and package manager (like npm for JavaScript or pip for Python)</li>
+                <li><strong>Git</strong> - Version control (tracks all changes to the code)</li>
+                <li><strong>Anchor</strong> - Specialized tools for Solana program development</li>
+                <li><strong>SQLx</strong> - Database toolkit that checks your SQL queries at compile time</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Where Everything Lives</h2>
+            <p class="section-intro">
+                If you want to explore the code yourself, here's where to find everything. Don't worry if this looks technical - 
+                it's just a map of the file structure.
+            </p>
+
+            <h3>XForce Terminal Files</h3>
+            <pre style="background: #ffffff; padding: 25px; border-radius: 8px; overflow-x: auto; font-size: 0.95em; line-height: 1.8; border-left: 4px solid #dc2626; border: 2px solid #fee2e2;">
+xforce-terminal/
+├── terminal/              ← The desktop app you see
+│   ├── src/main.rs       ← Where the app starts
+│   ├── src/app/          ← App logic and state
+│   ├── src/ui/           ← All the visual components
+│   └── src/services/     ← Talks to backend and blockchain
+├── backend/               ← The server that does the work
+│   └── src/main.rs       ← Server starts here
+├── wallet-web/            ← Browser wallet helper
+│   └── src/main.rs       ← Web app entry point
+├── crates/libs/           ← Reusable code libraries
+│   ├── lib-solana/       ← Blockchain stuff
+│   ├── lib-core/         ← Data models
+│   ├── lib-web/          ← Web server code
+│   ├── lib-auth/         ← Login and security
+│   └── lib-utils/        ← Helper functions
+├── shared/                ← Code shared between parts
+└── migrations/            ← Database setup files
+            </pre>
+
+            <h3>Smart Contracts Files</h3>
+            <pre style="background: #ffffff; padding: 25px; border-radius: 8px; overflow-x: auto; font-size: 0.95em; line-height: 1.8; border-left: 4px solid #991b1b; border: 2px solid #fee2e2;">
+xforce-terminal-contracts/
+├── programs/
+│   └── batch-swap-router/  ← The smart contract program
+│       └── src/lib.rs      ← Contract code starts here
+├── client/                 ← Library for using the contract
+│   └── src/lib.rs         ← Easy-to-use functions
+├── tests/                  ← Tests to make sure it works
+└── idl/                    ← Interface definitions
+            </pre>
+
+            <h3>News Service Files</h3>
+            <pre style="background: #ffffff; padding: 25px; border-radius: 8px; overflow-x: auto; font-size: 0.95em; line-height: 1.8; border-left: 4px solid #b91c1c; border: 2px solid #fee2e2;">
+xforce-crypto-info/
+├── news-service/           ← The API server
+│   ├── src/main.rs        ← Server starts here
+│   ├── src/handlers/      ← Handles API requests
+│   ├── src/database/      ← Database code
+│   └── migrations/        ← Database setup
+├── news-scraper/           ← The Python scraper
+│   ├── main.py            ← Scraper starts here
+│   ├── scrapers/          ← Code that reads websites
+│   ├── processors/        ← Cleans up the data
+│   └── writers/           ← Saves to database
+└── ref/                    ← Reference code (examples)
+            </pre>
+        </section>
+
+        <div class="visual-break"></div>
+    </div>
+
+    <a href="#" class="back-to-top" id="backToTop" title="Back to top">↑</a>
+
+    <footer>
+        <p style="font-size: 1.2em; margin-bottom: 10px;"><strong>XForce Terminal Architecture</strong></p>
+        <p>How Everything Works Together - Explained Simply</p>
+        <p style="margin-top: 20px; color: #999; font-size: 0.9em;">Last Updated: 2025</p>
+    </footer>
+
+    <script>
+        // Back to top button
+        const backToTop = document.getElementById('backToTop');
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTop.style.display = 'flex';
+            } else {
+                backToTop.style.display = 'none';
+            }
+        });
+
+        backToTop.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                const targetSection = document.getElementById(targetId);
+                if (targetSection) {
+                    targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Add subtle animations on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe all sections
+        document.querySelectorAll('section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(20px)';
+            section.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(section);
+        });
+    </script>
+</body>
+</html>

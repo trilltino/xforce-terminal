@@ -15,9 +15,8 @@ use crate::pages::{
     StatusPage,
     WalletSetupPage,
     TransactionSignPage,
-    AboutPage,
 };
-use crate::components::{Navbar, Starfield};
+use crate::components::Starfield;
 use crate::state::wallet::provide_wallet_context;
 
 #[component]
@@ -124,10 +123,8 @@ pub fn App() -> impl IntoView {
         <Router>
             <div class="app-container">
                 <Starfield/>
-                <Navbar/>
                 <Routes fallback=|| view! { <NotFound/> }>
                     <Route path=path!("/") view=ConnectPage/>
-                    <Route path=path!("/about") view=AboutPage/>
                     <Route path=path!("/status") view=StatusPage/>
                     <Route path=path!("/wallet-setup") view=WalletSetupPage/>
                     <Route path=path!("/sign-transaction") view=TransactionSignPage/>

@@ -122,7 +122,16 @@ pub fn ConnectPage() -> impl IntoView {
         }
     });
 
+    let connect_wallet_placeholder = move |provider: WalletProvider| {
+        // Placeholder - just for screenshot, no actual connection
+        log!("Wallet connection clicked: {}", provider.name());
+    };
+
     let connect_wallet = move |provider: WalletProvider| {
+        // Placeholder - just for screenshot, no actual connection
+        log!("Wallet connection clicked: {}", provider.name());
+        // Original connection code disabled for screenshot
+        /*
         set_connecting.set(true);
         set_error.set(None);
 
@@ -308,14 +317,23 @@ pub fn ConnectPage() -> impl IntoView {
             set_setup_complete.set(true);
             set_connecting.set(false);
         });
+        */
     };
 
     view! {
         <div class="content-wrapper">
             <div class="left-section">
-                <h1 class="main-header">"XForceTerminal"</h1>
-                <p class="main-subheader">"Access to Solana Defi anywhere"</p>
+                <h1 class="main-header">
+                    <span class="xf-red">"XF"</span>
+                    <span class="terminal-white">"Terminal"</span>
+                </h1>
+                <p class="main-subheader">"Access SolanaDeFi Anywhere"</p>
                 <p class="signup-text">"connect wallet to complete sign up"</p>
+                <div class="disclaimer">
+                    <p>
+                        "The XFORCETERMINAL service and data products are owned and distributed by XFSolutions LTD. XFSolutions provides global marketing and operational support for these products. XFSolutions believe the information herein came from reliable sources, but do not guarantee their accuracy. NO information here constitutes a solicitation of the Purchase of any Cryptocurrency or Asset."
+                    </p>
+                </div>
             </div>
             <div class="right-section">
                 <div class="container">
@@ -360,93 +378,65 @@ pub fn ConnectPage() -> impl IntoView {
                                         </div>
                                     })}
 
-                                    {move || if setup_token().is_none() {
-                                        view! {
+                                    {view! {
+                                        <div>
                                             <div class="info">
-                                                <p style="text-align: center; margin-bottom: 8px;">
-                                                    "No setup token found."
+                                                <p style="text-align: center; margin-bottom: 8px; font-weight: 600;">
+                                                    "Connect your wallet"
                                                 </p>
                                                 <p style="text-align: center; font-size: 0.9em;">
-                                                    "Please sign up through the terminal first."
+                                                    "Select a wallet from the options below"
                                                 </p>
                                             </div>
-                                        }.into_any()
-                                    } else {
-                                        view! {
-                                            <div>
-                                                <div class="info">
-                                                    <p style="text-align: center; margin-bottom: 8px; font-weight: 600;">
-                                                        "Connect your wallet to complete account setup"
-                                                    </p>
-                                                    <p style="text-align: center; font-size: 0.9em;">
-                                                        "Select a wallet from the options below"
-                                                    </p>
-                                                </div>
 
-                                                <div style="display: flex; flex-direction: column; gap: 12px;">
-                                                    {move || {
-                                                        let wallets = available_wallets.get();
-                                                        if wallets.is_empty() {
-                                                            view! {
-                                                                <div class="info" style="text-align: center;">
-                                                                    <p style="color: #ffffff; margin-bottom: 12px; font-weight: 600; font-size: 18px;">
-                                                                        "No wallet extensions detected"
-                                                                    </p>
-                                                                    <p style="color: #888888; font-size: 0.9em; margin-bottom: 16px;">
-                                                                        "Please install one of the following wallets:"
-                                                                    </p>
-                                                                    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px;">
-                                                                        <p style="color: #cccccc; font-size: 0.85em;">"• " <span style="color: #ff6666; font-weight: 500;">"Phantom"</span></p>
-                                                                        <p style="color: #cccccc; font-size: 0.85em;">"• " <span style="color: #ff6666; font-weight: 500;">"Solflare"</span></p>
-                                                                        <p style="color: #cccccc; font-size: 0.85em;">"• " <span style="color: #ff6666; font-weight: 500;">"Backpack"</span></p>
-                                                                    </div>
-                                                                </div>
-                                                            }.into_any()
-                                                        } else {
-                                                            let wallets_clone = wallets.clone();
-                                                            let connect_fn_clone = connect_wallet.clone();
-                                                            let is_connecting = connecting.get();
-                                                            
-                                                            view! {
-                                                                <div>
-                                                                    {wallets_clone.into_iter().map(move |wallet_provider| {
-                                                                        let provider_name = wallet_provider.name().to_string();
-                                                                        let provider_clone = wallet_provider.clone();
-                                                                        let connect_cb = connect_fn_clone.clone();
-                                                                        
-                                                                        view! {
-                                                                            <button
-                                                                                class="btn-secondary"
-                                                                                style="width: 100%; padding: 16px; font-size: 1em; text-align: left; display: flex; align-items: center; justify-content: space-between;"
-                                                                                on:click=move |_| connect_cb(provider_clone.clone())
-                                                                                disabled=is_connecting
-                                                                            >
-                                                                                <span style="font-weight: 600;">{provider_name}</span>
-                                                                                <span style="font-size: 0.9em; opacity: 0.9;">"→"</span>
-                                                                            </button>
-                                                                        }
-                                                                    }).collect::<Vec<_>>()}
-                                                                </div>
-                                                            }.into_any()
+                                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                                {move || {
+                                                    let wallets = available_wallets.get();
+                                                    // Always show common wallets for screenshot, even if not detected
+                                                    let mut all_wallets = vec![
+                                                        WalletProvider::Phantom,
+                                                        WalletProvider::Solflare,
+                                                        WalletProvider::Backpack,
+                                                    ];
+                                                    
+                                                    // Add any detected wallets that aren't already in the list
+                                                    for wallet in wallets.iter() {
+                                                        if !all_wallets.contains(wallet) {
+                                                            all_wallets.push(wallet.clone());
                                                         }
-                                                    }}
-
-                                                    {move || if connecting.get() {
-                                                        view! {
-                                                            <div style="text-align: center; margin-top: 16px;">
-                                                                <div class="spinner"></div>
-                                                                <p style="color: #888888; font-size: 0.9em; margin-top: 12px;">
-                                                                    "Connecting..."
-                                                                </p>
-                                                            </div>
-                                                        }.into_any()
-                                                    } else {
-                                                        view! { <></> }.into_any()
-                                                    }}
-                                                </div>
+                                                    }
+                                                    
+                                                    let wallets_clone = all_wallets.clone();
+                                                    
+                                                    view! {
+                                                        <div>
+                                                            {wallets_clone.into_iter().map(move |wallet_provider| {
+                                                                let provider_name = wallet_provider.name().to_string();
+                                                                let provider_lower = provider_name.to_lowercase();
+                                                                let image_path = format!("/assets/wallets/{}.webp", provider_lower);
+                                                                let provider_clone = wallet_provider.clone();
+                                                                
+                                                                view! {
+                                                                    <button
+                                                                        class="wallet-button"
+                                                                        on:click=move |_| connect_wallet_placeholder(provider_clone.clone())
+                                                                    >
+                                                                        <img 
+                                                                            src=image_path.clone()
+                                                                            alt=provider_name.clone()
+                                                                            style="width: 32px; height: 32px; object-fit: contain; margin-right: 12px;"
+                                                                        />
+                                                                        <span style="font-weight: 600; flex: 1; text-align: left;">{provider_name}</span>
+                                                                        <span style="font-size: 0.9em; opacity: 0.9;">"→"</span>
+                                                                    </button>
+                                                                }
+                                                            }).collect::<Vec<_>>()}
+                                                        </div>
+                                                    }.into_any()
+                                                }}
                                             </div>
-                                        }.into_any()
-                                    }}
+                                        </div>
+                                    }.into_any()
                                 </div>
                             }.into_any()
                         }}

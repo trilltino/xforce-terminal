@@ -10,4 +10,3 @@ pub use connect::ConnectPage;
 pub use status::StatusPage;
 pub use wallet_setup::WalletSetupPage;
 pub use transaction_sign::TransactionSignPage;
-pub use about::AboutPage;
