@@ -1,10 +1,9 @@
 # XForce Terminal
-
-![XForce Terminal](xforce-terminal.png)
-
+<img width="1919" height="973" alt="XFTerminal" src="https://github.com/user-attachments/assets/7606d247-a92a-4ba3-8958-07a9516eeb10" />
 Non-custodial Solana DeFi trading terminal with Bloomberg-style interface.
 
 ## Architecture
+
 
 - **Native Desktop GUI**: Rust + egui framework for cross-platform terminal application
 - **Web Wallet Interface**: Leptos-based WASM application for wallet connection
