@@ -12,7 +12,7 @@ Non-custodial Solana DeFi trading terminal with Bloomberg-style interface.
 
 ## Technology Stack
 
-- **Language**: Rust (edition 2021)
+- **Language**: Rust 
 - **Desktop GUI**: egui + eframe for native window rendering
 - **Web Framework**: Leptos for reactive WASM frontend
 - **Blockchain**: Solana SDK integration
