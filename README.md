@@ -1,45 +1,228 @@
 # XForce Terminal
-<img width="1919" height="973" alt="XFTerminal" src="https://github.com/user-attachments/assets/7606d247-a92a-4ba3-8958-07a9516eeb10" />
-Non-custodial Solana DeFi trading terminal with Bloomberg-style interface.
 
-## Architecture
+A comprehensive non-custodial Solana DeFi trading platform featuring a desktop terminal application, web wallet interface, and robust backend API. Built with Rust, React, and Tauri.
 
+## Overview
 
-- **Native Desktop GUI**: Rust + egui framework for cross-platform terminal application
-- **Web Wallet Interface**: Leptos-based WASM application for wallet connection
-- **Backend Services**: Rust async backend with PostgreSQL database
-- **Modular Library Design**: Shared crates for core, auth, web, Solana, and utilities
-
-## Technology Stack
-
-- **Language**: Rust 
-- **Desktop GUI**: egui + eframe for native window rendering
-- **Web Framework**: Leptos for reactive WASM frontend
-- **Blockchain**: Solana SDK integration
-- **DEX Integration**: Jupiter aggregator for swap routing
-- **Price Feeds**: Pyth oracle integration
-- **Database**: PostgreSQL with SQL migrations
-- **Async Runtime**: Tokio for concurrent operations
-
-## Features
-
-- Real-time market data via Jupiter aggregator and Pyth oracles
-- Non-custodial wallet management with local keypair signing
-- DEX swap execution with optimal route finding
-- Transaction history tracking and monitoring
-- Bloomberg-style terminal interface for professional trading
-- Multi-wallet support (Phantom, Solflare, Backpack)
+XForce Terminal provides traders with professional-grade tools for interacting with the Solana DeFi ecosystem. The platform combines a Bloomberg-style desktop terminal, a web-based wallet interface, and a high-performance backend API to deliver real-time market data, swap execution, and portfolio management.
 
 ## Project Structure
 
-- `terminal/` - Native desktop GUI application
-- `wallet-web/` - Web-based wallet connection interface
-- `backend/` - API server and database management
-- `crates/libs/` - Shared library modules
-- `shared/` - Common DTOs and utilities
-- `migrations/` - Database schema migrations
+```
+xforce-terminal/
+├── backend/              # Axum REST API server
+├── crates/               # Internal Rust library crates
+│   ├── libs/
+│   │   ├── lib-auth/     # Authentication and JWT handling
+│   │   ├── lib-core/     # Core models, errors, and configuration
+│   │   ├── lib-solana/   # Solana blockchain integration
+│   │   ├── lib-utils/    # Utility functions and helpers
+│   │   └── lib-web/      # Web server handlers and middleware
+│   └── utils/
+│       └── clear-users/  # User management utility
+├── terminal-tauri/       # Desktop terminal application (Tauri + React)
+├── wallet-react/         # Web wallet interface (React)
+├── docs/                 # HTML documentation
+├── idl/                  # Solana program IDL files
+└── migrations/           # Database migration scripts
+```
+
+## Key Features
+
+### Desktop Terminal
+- Real-time price charts with lightweight-charts
+- Multi-wallet support (Phantom, Solflare, Backpack)
+- Jupiter aggregator integration for optimal swap routing
+- Resizable Bloomberg-style panel layout
+- WebSocket price feeds for live market data
+
+### Web Wallet
+- Connect any Solana wallet adapter
+- View token balances and transaction history
+- Interactive starfield animation background
+- Responsive design for mobile and desktop
+
+### Backend API
+- JWT-based authentication with Argon2 password hashing
+- Market data from Pyth Network and Jupiter
+- Swap quote generation and execution
+- WebSocket real-time price feeds
+- RESTful API design with comprehensive error handling
+
+## Technology Stack
+
+### Backend
+- **Framework**: Axum (Rust)
+- **Database**: PostgreSQL with SQLx
+- **Authentication**: JWT tokens with Argon2
+- **Solana Integration**: solana-client, Jupiter API, Pyth Network
+- **WebSocket**: tokio-tungstenite
+
+### Desktop Terminal
+- **Framework**: Tauri v2
+- **Frontend**: React 18 with TypeScript
+- **Styling**: Tailwind CSS
+- **Charts**: lightweight-charts
+- **State Management**: Zustand
+
+### Web Wallet
+- **Framework**: React 18 with TypeScript
+- **Wallet Adapter**: Solana Wallet Adapter
+- **Styling**: Tailwind CSS
+- **Animations**: Custom canvas-based starfield
+
+## Quick Start
+
+### Prerequisites
+- Rust 1.70+
+- Node.js 18+
+- PostgreSQL 14+
+- Solana CLI (optional, for local testing)
+
+### Backend
+
+```bash
+cd backend
+cargo run
+```
+
+Server starts at `http://localhost:8080`
+
+### Desktop Terminal
+
+```bash
+cd terminal-tauri/src-ui
+npm install
+cd ..
+cargo tauri dev
+```
+
+### Web Wallet
+
+```bash
+cd wallet-react
+npm install
+npm run dev
+```
+
+Access at `http://localhost:5173`
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/login` - User login
+- `POST /api/auth/signup` - User registration
+- `POST /api/auth/logout` - User logout
+
+### Market Data
+- `GET /api/market/prices` - Get token prices
+- `GET /api/market/candles` - Get OHLCV candle data
+- `WS /api/ws/prices` - WebSocket price feed
+
+### Swaps
+- `POST /api/swap/quote` - Get swap quote
+- `POST /api/swap/execute` - Execute swap transaction
+
+### Wallet
+- `GET /api/wallet/balance` - Get wallet balances
+- `GET /api/wallet/transactions` - Get transaction history
+
+### Social
+- `GET /api/friends` - List friends
+- `POST /api/friends/add` - Add friend
+- `GET /api/chat/history` - Chat history
+- `WS /api/chat` - Real-time chat
+
+## Library Crates
+
+### lib-auth
+Authentication primitives including JWT token generation/validation and Argon2 password hashing.
+
+### lib-core
+Core domain models, database configurations, error types, and DTOs for auth, market, and messaging.
+
+### lib-solana
+Solana blockchain integration including:
+- RPC client management
+- Jupiter aggregator API
+- Pyth price feeds
+- SPL token operations
+- Transaction building and caching
+- Candle aggregation
+
+### lib-utils
+Utility functions for base64 encoding/decoding, environment variable loading, time formatting, and input validation.
+
+### lib-web
+Web server components including HTTP handlers, middleware (auth, logging, request stamping), routing, and services for market data, swaps, and transactions.
+
+## Configuration
+
+Environment variables (see `.env.example`):
+
+```env
+DATABASE_URL=postgres://user:pass@localhost/xforce
+JWT_SECRET=your-secret-key
+RPC_URL=https://api.devnet.solana.com
+JUPITER_API_URL=https://quote-api.jup.ag/v6
+PYTH_BENCHMARKS_URL=https://benchmarks.pyth.network
+```
+
+## Development
+
+### Building
+
+```bash
+# Build all crates
+cargo build --release
+
+# Build specific crate
+cargo build -p lib-solana --release
+```
+
+### Testing
+
+```bash
+# Run all tests
+cargo test
+
+# Run with logging
+cargo test -- --nocapture
+```
+
+### Database Migrations
+
+```bash
+# Apply migrations
+sqlx migrate run
+
+# Create new migration
+sqlx migrate add <name>
+```
+
+## Scripts
+
+- `start.bat` - Start production backend
+- `start-web.bat` - Start web wallet
+- `start-debug-viewer.bat` - Start with debug logging
+- `build.bat` - Build all components
 
 ## License
 
-Apache-2.0
+Apache-2.0 - See [LICENSE](LICENSE) for details.
 
+## Security
+
+This project handles cryptocurrency transactions. Always:
+- Review transaction details before signing
+- Use hardware wallets when possible
+- Test on devnet before mainnet usage
+- Keep private keys secure and never commit them
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
